@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Extract clinically relevant SNPs from your genome file. Privacy-first: your data never leaves your browser." />
+    <title>GenomeGist - Extract the gist of your genome</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>GenomeGist</h1>
+        <p class="tagline">Extract the gist of your genome.</p>
+      </header>
+
+      <main>
+        <section id="tool" class="tool-section">
+          <div id="upload-zone" class="upload-zone">
+            <p class="upload-text">Drag and drop your genome file here</p>
+            <p class="upload-subtext">or click to browse</p>
+            <p class="upload-formats">Supports: 23andMe (.txt)</p>
+            <input type="file" id="file-input" accept=".txt,.csv" hidden />
+          </div>
+
+          <div id="status" class="status" hidden>
+            <p id="status-text"></p>
+          </div>
+
+          <div id="results" class="results" hidden>
+            <p id="results-summary"></p>
+            <button id="download-btn" class="btn btn-primary">Download Results</button>
+          </div>
+
+          <div id="error" class="error" hidden>
+            <p id="error-text"></p>
+          </div>
+        </section>
+
+        <section class="info-section">
+          <h2>What is this?</h2>
+          <p>
+            GenomeGist extracts clinically and wellness-relevant genetic variants from raw genome
+            files exported from services like 23andMe. The output is a compact YAML file ready
+            for analysis with AI tools.
+          </p>
+          <ul>
+            <li>Upload your raw genome file</li>
+            <li>We match it against a curated list of relevant SNPs</li>
+            <li>Download a summary with your genotypes and annotations</li>
+          </ul>
+        </section>
+
+        <section class="privacy-section">
+          <h2>Privacy</h2>
+          <p>
+            <strong>Your genetic data never leaves your browser.</strong> All processing happens
+            locally on your device. We don't upload, store, or transmit your genome file.
+            The only network requests are for loading the application itself.
+          </p>
+        </section>
+
+        <section class="pricing-section">
+          <h2>Pricing</h2>
+          <div class="pricing-grid">
+            <div class="pricing-tier">
+              <h3>Free</h3>
+              <p>~15 common SNPs including MTHFR, APOE, COMT</p>
+              <p class="price">$0</p>
+            </div>
+            <div class="pricing-tier">
+              <h3>Full Report</h3>
+              <p>1,000+ clinically relevant variants</p>
+              <p class="price">Coming soon</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>
+          GenomeGist v1.0.0 ·
+          <a href="#disclaimer">Disclaimer</a> ·
+          For research and educational use only
+        </p>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

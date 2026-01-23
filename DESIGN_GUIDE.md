@@ -10,6 +10,39 @@
 
 **What it's not:** A health platform, medical service, consumer wellness app, or slick startup.
 
+### Name
+
+**GenomeGist** (one word, camel case)
+
+- Logo/headers: `GenomeGist`
+- URLs/code: `genomegist` or `genome-gist`
+- Never: "Genome Gist", "GENOMEGIST", "genome gist"
+
+### Domain
+
+Primary: `genomegist.com`
+- App: `genomegist.com` (root)
+- API: `api.genomegist.com`
+
+### Logo Concept
+
+Minimal wordmark. No icons,  no microscopes.
+
+```
+GenomeGist
+```
+
+That's it. The name is the logo.
+
+**Typography for logo:**
+- Primary: JetBrains Mono, IBM Plex Mono, or similar monospace
+- Weight: Medium (500)
+- Optional subtle treatment: "Genome" in regular weight, "Gist" in bold
+
+**Alternative minimal mark (for favicon, small spaces):**
+- `GG` monogram in monospace
+- Or: `{ }` brackets containing `GG` → `{GG}`
+
 ---
 
 ## Design Philosophy
@@ -169,16 +202,6 @@ No navigation needed — the page is short enough to scroll.
 
 ---
 
-## Logo and Favicon
-
-**Logo:** Text only. The name "GenomeGist" in a clean sans-serif font is sufficient. No graphic mark needed.
-
-If a more stylized version is desired, consider a monospace treatment like `[genome:gist]` but this is optional.
-
-**Favicon:** Keep it simple. A 🧬 emoji works, or a simple letter "G" in the brand color.
-
----
-
 ## Implementation Notes
 
 When building the site:
@@ -197,54 +220,53 @@ When building the site:
 
 ### Colors
 ```
-(To be filled in during development)
-
-Primary text:       
-Secondary text:     
-Background:         
-Accent:             
-Borders:            
-Success:            
-Error:              
-Code background:    
+Primary text:       #1a1a1a
+Secondary text:     #555
+Background:         #fff
+Background alt:     #f8f9fa
+Accent:             #0066cc
+Accent hover:       #0052a3
+Borders:            #ddd
+Success:            #228b22
+Error:              #cc0000
+Code background:    #f5f5f5
 ```
 
 ### Typography
 ```
-(To be filled in during development)
-
-Font stack:         
-Base size:          
-Line height:        
-Heading sizes:      
-Monospace font:     
+Font stack:         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif
+Monospace font:     ui-monospace, 'SF Mono', Menlo, Monaco, 'Cascadia Code', monospace
+Base size:          16px
+Line height:        1.6
+H1 size:            2rem (32px)
+H2 size:            1.25rem (20px)
+H3 size:            1.1rem (17.6px)
 ```
 
 ### Spacing
 ```
-(To be filled in during development)
-
-Content max-width:  
-Section padding:    
-Element margins:    
+Content max-width:  720px
+Spacing xs:         0.5rem (8px)
+Spacing sm:         1rem (16px)
+Spacing md:         1.5rem (24px)
+Spacing lg:         2rem (32px)
+Spacing xl:         3rem (48px)
 ```
 
 ### Components
 ```
-(To be filled in during development)
-
-Button padding:     
-Button border-radius:
-Input padding:      
-Border width:       
-Border radius:      
+Button padding:     0.6rem 1.2rem
+Button border-radius: 3px
+Border width:       1px
+Border radius:      3px
+Upload zone border: 2px dashed
 ```
 
 ### Specific Decisions
 ```
-(Document any design decisions or patterns established during development)
-
-- 
-- 
-- 
+- Dark buttons on light background (not accent-colored) for primary actions
+- Status messages use left border accent (3px) instead of full border
+- Upload zone uses dashed border with 2px width
+- System fonts only, no web font loading
+- Minimal transitions (0.15s) only on interactive elements
 ```

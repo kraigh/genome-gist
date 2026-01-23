@@ -12,13 +12,13 @@
 ## Phase 1: MVP (Free Tier)
 
 ### 1.1 Project Scaffolding
-- [ ] Initialize Vite + TypeScript project
-- [ ] Configure tsconfig.json (strict mode, ES2020)
-- [ ] Set up ESLint + Prettier
-- [ ] Configure Vitest for testing
-- [ ] Create index.html skeleton with semantic structure
-- [ ] Create styles.css with design tokens (colors, typography, spacing)
-- [ ] Set up basic responsive layout (centered single column)
+- [x] Initialize Vite + TypeScript project
+- [x] Configure tsconfig.json (strict mode, ES2020)
+- [x] Set up ESLint + Prettier
+- [x] Configure Vitest for testing
+- [x] Create index.html skeleton with semantic structure
+- [x] Create styles.css with design tokens (colors, typography, spacing)
+- [x] Set up basic responsive layout (centered single column)
 
 ### 1.2 Core Types
 - [ ] Define GenomeVariant type (rsid, chromosome, position, genotype)
