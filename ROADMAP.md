@@ -21,17 +21,17 @@
 - [x] Set up basic responsive layout (centered single column)
 
 ### 1.2 Core Types
-- [ ] Define GenomeVariant type (rsid, chromosome, position, genotype)
-- [ ] Define SNPEntry type (rsid, gene, category, annotation, sources)
-- [ ] Define SNPList type (version, variants array)
-- [ ] Define ExtractionResult type (metadata + matched variants)
+- [x] Define GenomeVariant type (rsid, chromosome, position, genotype)
+- [x] Define SNPEntry type (rsid, gene, category, annotation, sources)
+- [x] Define SNPList type (version, variants array)
+- [x] Define ExtractionResult type (metadata + matched variants)
 
 ### 1.3 Parser
-- [ ] Implement 23andMe v5 parser (tab-separated, handles comments)
-- [ ] Implement format detector (identify 23andMe from header/content)
-- [ ] Handle edge cases: no-call genotypes (--), insertions/deletions
-- [ ] Return structured errors with line numbers for parse failures
-- [ ] Write parser tests with fixture files
+- [x] Implement 23andMe v5 parser (tab-separated, handles comments)
+- [x] Implement format detector (identify 23andMe from header/content)
+- [x] Handle edge cases: no-call genotypes (--), insertions/deletions
+- [x] Return structured errors with line numbers for parse failures
+- [x] Write parser tests with fixture files
 
 ### 1.4 Free SNP List
 - [ ] Create public/snp-list-free.json with ~15-20 well-known SNPs
@@ -123,6 +123,7 @@
 ### 3.1 Additional Parsers
 - [ ] AncestryDNA parser
 - [ ] Legacy 23andMe formats (v3, v4)
+- [ ] Identify additional formats from popular consumer genome sequencers
 - [ ] Improve format auto-detection
 
 ### 3.2 Output Options
