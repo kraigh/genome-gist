@@ -55,29 +55,29 @@
 - [x] Write output tests
 
 ### 1.7 UI - File Upload
-- [ ] Create upload zone component (dashed border, instructions)
-- [ ] Implement drag-and-drop handling
-- [ ] Implement click-to-browse fallback
-- [ ] Show supported formats list
-- [ ] Validate file before processing (size limits, basic format check)
+- [x] Create upload zone component (dashed border, instructions)
+- [x] Implement drag-and-drop handling
+- [x] Implement click-to-browse fallback
+- [x] Show supported formats list
+- [x] Validate file before processing (size limits, basic format check)
 
 ### 1.8 UI - Processing Flow
-- [ ] Display processing status (plain text updates)
-- [ ] Show progress: "Parsing file...", "Found X variants", "Matching against SNP list..."
-- [ ] Display results summary (X of Y SNPs found)
-- [ ] Handle and display errors inline (red text, clear message)
+- [x] Display processing status (plain text updates)
+- [x] Show progress: "Parsing file...", "Found X variants", "Matching against SNP list..."
+- [x] Display results summary (X of Y SNPs found)
+- [x] Handle and display errors inline (red text, clear message)
 
 ### 1.9 UI - Download
-- [ ] Implement YAML file generation and download
-- [ ] Show download button with file size
-- [ ] Use descriptive filename (genomegist-results-YYYY-MM-DD.yaml)
+- [x] Implement YAML file generation and download
+- [x] Show download button with file size
+- [x] Use descriptive filename (genomegist-results-YYYY-MM-DD.yaml)
 
 ### 1.10 Integration & Polish
-- [ ] Wire up all components end-to-end
+- [x] Wire up all components end-to-end
 - [ ] Test full flow with real genome file
-- [ ] Add privacy messaging to page ("Your data never leaves your browser")
-- [ ] Add brief explanation section (what this tool does)
-- [ ] Add footer (version, disclaimer link)
+- [x] Add privacy messaging to page ("Your data never leaves your browser")
+- [x] Add brief explanation section (what this tool does)
+- [x] Add footer (version, disclaimer link)
 - [ ] Cross-browser testing (Chrome, Firefox, Safari)
 - [ ] Mobile responsiveness check
 

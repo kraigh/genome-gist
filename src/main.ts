@@ -1,7 +1,13 @@
-// GenomeGist - Main entry point
-// Version 1.0.0
+/**
+ * GenomeGist - Main entry point
+ * Version 1.0.0
+ */
 
-console.log('GenomeGist v1.0.0 loaded');
+import { parseGenomeFile, formatDisplayName } from './parser';
+import { loadFreeSNPList } from './snp-list';
+import { extractVariants } from './extractor';
+import { toYAML, generateFilename, calculateSize } from './output';
+import type { SNPList, ExtractionResult, ParseError } from './types';
 
 // DOM elements
 const uploadZone = document.getElementById('upload-zone') as HTMLDivElement;
@@ -15,7 +21,21 @@ const errorDiv = document.getElementById('error') as HTMLDivElement;
 const errorText = document.getElementById('error-text') as HTMLParagraphElement;
 
 // State
-let currentResult: string | null = null;
+let currentYAML: string | null = null;
+let snpList: SNPList | null = null;
+
+// Initialize
+async function init(): Promise<void> {
+  try {
+    showStatus('Loading SNP list...');
+    snpList = await loadFreeSNPList();
+    hideStatus();
+    console.log(`GenomeGist v1.0.0 loaded. SNP list v${snpList.version} with ${snpList.count} variants.`);
+  } catch (err) {
+    showError('Failed to load SNP list. Please refresh the page.');
+    console.error('Failed to load SNP list:', err);
+  }
+}
 
 // UI Helpers
 function showStatus(message: string): void {
@@ -25,12 +45,33 @@ function showStatus(message: string): void {
   errorDiv.hidden = true;
 }
 
-function showResults(summary: string, yamlContent: string): void {
+function hideStatus(): void {
+  statusDiv.hidden = true;
+}
+
+function showResults(result: ExtractionResult, yamlContent: string): void {
   statusDiv.hidden = true;
   resultsDiv.hidden = false;
-  resultsSummary.textContent = summary;
-  currentResult = yamlContent;
   errorDiv.hidden = true;
+
+  const { found, noCall, missing, total } = result.summary;
+  const fileSize = calculateSize(yamlContent);
+  const format = formatDisplayName(result.metadata.sourceFormat);
+
+  let summaryText = `Found ${found} of ${total} variants`;
+  if (noCall > 0) {
+    summaryText += ` (${noCall} no-call)`;
+  }
+  if (missing > 0) {
+    summaryText += `, ${missing} not in file`;
+  }
+  summaryText += `. Source: ${format}. Download size: ${fileSize}`;
+
+  resultsSummary.textContent = summaryText;
+  currentYAML = yamlContent;
+
+  // Update download button text with size
+  downloadBtn.textContent = `Download Results (${fileSize})`;
 }
 
 function showError(message: string): void {
@@ -44,9 +85,24 @@ function showError(message: string): void {
 function handleFile(file: File): void {
   if (!file) return;
 
+  if (!snpList) {
+    showError('SNP list not loaded. Please refresh the page.');
+    return;
+  }
+
   // Basic validation
-  if (!file.name.endsWith('.txt') && !file.name.endsWith('.csv')) {
+  const validExtensions = ['.txt', '.csv'];
+  const hasValidExtension = validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext));
+
+  if (!hasValidExtension) {
     showError('Unsupported file format. Please upload a .txt file from 23andMe.');
+    return;
+  }
+
+  // Check file size (warn if very large)
+  const maxSize = 100 * 1024 * 1024; // 100MB
+  if (file.size > maxSize) {
+    showError('File is too large. Maximum size is 100MB.');
     return;
   }
 
@@ -61,7 +117,7 @@ function handleFile(file: File): void {
       return;
     }
 
-    processGenomeFile(content, file.name);
+    processGenomeFile(content);
   };
 
   reader.onerror = () => {
@@ -71,41 +127,52 @@ function handleFile(file: File): void {
   reader.readAsText(file);
 }
 
-// Process genome file (placeholder - will be implemented in parser module)
-function processGenomeFile(content: string, filename: string): void {
-  showStatus('Parsing genome file...');
+// Process genome file
+function processGenomeFile(content: string): void {
+  if (!snpList) {
+    showError('SNP list not loaded. Please refresh the page.');
+    return;
+  }
 
-  // TODO: Implement actual parsing
-  // For now, just count lines to show something is working
-  const lines = content.split('\n');
-  const dataLines = lines.filter((line) => !line.startsWith('#') && line.trim().length > 0);
+  try {
+    // Parse the genome file
+    showStatus('Parsing genome file...');
+    const parseResult = parseGenomeFile(content);
 
-  showStatus(`Found ${dataLines.length.toLocaleString()} variants. Matching against SNP list...`);
+    showStatus(
+      `Parsed ${parseResult.variants.length.toLocaleString()} variants. Matching against SNP list...`
+    );
 
-  // Simulate processing delay for demo
-  setTimeout(() => {
-    // TODO: Replace with actual extraction logic
-    const placeholderYaml = `# GenomeGist Results
-# This is a placeholder - full implementation coming soon
-metadata:
-  tool: GenomeGist
-  version: 1.0.0
-  source_file: ${filename}
-  variants_in_file: ${dataLines.length}
-`;
+    // Extract matching variants
+    const extractionResult = extractVariants(parseResult, snpList);
 
-    showResults(`Processed ${dataLines.length.toLocaleString()} variants from ${filename}`, placeholderYaml);
-  }, 500);
+    // Generate YAML output
+    showStatus('Generating output...');
+    const yamlContent = toYAML(extractionResult);
+
+    // Show results
+    showResults(extractionResult, yamlContent);
+  } catch (err) {
+    // Handle parse errors
+    const parseError = err as ParseError;
+    let errorMessage = parseError.message || 'Failed to process file.';
+
+    if (parseError.details) {
+      errorMessage += ` ${parseError.details}`;
+    }
+
+    showError(errorMessage);
+    console.error('Processing error:', err);
+  }
 }
 
 // Download handler
 function downloadResults(): void {
-  if (!currentResult) return;
+  if (!currentYAML) return;
 
-  const blob = new Blob([currentResult], { type: 'text/yaml' });
+  const blob = new Blob([currentYAML], { type: 'text/yaml' });
   const url = URL.createObjectURL(blob);
-  const date = new Date().toISOString().split('T')[0];
-  const filename = `genomegist-results-${date}.yaml`;
+  const filename = generateFilename();
 
   const a = document.createElement('a');
   a.href = url;
@@ -126,6 +193,8 @@ fileInput.addEventListener('change', () => {
   if (file) {
     handleFile(file);
   }
+  // Reset input so same file can be selected again
+  fileInput.value = '';
 });
 
 // Drag and drop
@@ -153,3 +222,6 @@ downloadBtn.addEventListener('click', downloadResults);
 // Prevent default drag behavior on document
 document.addEventListener('dragover', (e) => e.preventDefault());
 document.addEventListener('drop', (e) => e.preventDefault());
+
+// Initialize on load
+init();
