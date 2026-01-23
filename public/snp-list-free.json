@@ -1,0 +1,187 @@
+{
+  "version": "2025.01",
+  "generatedAt": "2025-01-23T00:00:00Z",
+  "count": 18,
+  "variants": [
+    {
+      "rsid": "rs1801133",
+      "gene": "MTHFR",
+      "category": "methylation",
+      "annotation": "C677T variant. The T allele is associated with reduced enzyme activity affecting folate metabolism.",
+      "sources": ["ClinVar", "PharmGKB", "SNPedia"],
+      "riskAllele": "T",
+      "chromosome": "1",
+      "position": 11856378
+    },
+    {
+      "rsid": "rs1801131",
+      "gene": "MTHFR",
+      "category": "methylation",
+      "annotation": "A1298C variant. The C allele may affect homocysteine levels when combined with C677T.",
+      "sources": ["ClinVar", "PharmGKB", "SNPedia"],
+      "riskAllele": "G",
+      "chromosome": "1",
+      "position": 11854476
+    },
+    {
+      "rsid": "rs429358",
+      "gene": "APOE",
+      "category": "cardiovascular",
+      "annotation": "APOE e4 determinant (along with rs7412). The C allele contributes to the e4 haplotype.",
+      "sources": ["ClinVar", "SNPedia", "GWAS Catalog"],
+      "riskAllele": "C",
+      "chromosome": "19",
+      "position": 45411941
+    },
+    {
+      "rsid": "rs7412",
+      "gene": "APOE",
+      "category": "cardiovascular",
+      "annotation": "APOE e2 determinant (along with rs429358). The T allele contributes to the e2 haplotype.",
+      "sources": ["ClinVar", "SNPedia", "GWAS Catalog"],
+      "riskAllele": "T",
+      "chromosome": "19",
+      "position": 45412079
+    },
+    {
+      "rsid": "rs4680",
+      "gene": "COMT",
+      "category": "neurotransmitters",
+      "annotation": "Val158Met variant. The A allele (Met) is associated with slower dopamine clearance.",
+      "sources": ["ClinVar", "PharmGKB", "SNPedia"],
+      "riskAllele": "A",
+      "chromosome": "22",
+      "position": 19951271
+    },
+    {
+      "rsid": "rs1800497",
+      "gene": "ANKK1/DRD2",
+      "category": "neurotransmitters",
+      "annotation": "Taq1A variant near DRD2. The A1 allele (T) is associated with reduced D2 receptor density.",
+      "sources": ["SNPedia", "GWAS Catalog"],
+      "riskAllele": "T",
+      "chromosome": "11",
+      "position": 113400106
+    },
+    {
+      "rsid": "rs6265",
+      "gene": "BDNF",
+      "category": "neurotransmitters",
+      "annotation": "Val66Met variant. The T allele (Met) may affect neuroplasticity and memory.",
+      "sources": ["ClinVar", "SNPedia", "GWAS Catalog"],
+      "riskAllele": "T",
+      "chromosome": "11",
+      "position": 27679916
+    },
+    {
+      "rsid": "rs1799971",
+      "gene": "OPRM1",
+      "category": "pharmacogenomics",
+      "annotation": "A118G variant in opioid receptor. The G allele may affect pain perception and opioid response.",
+      "sources": ["PharmGKB", "ClinVar", "SNPedia"],
+      "riskAllele": "G",
+      "chromosome": "6",
+      "position": 154360797
+    },
+    {
+      "rsid": "rs12248560",
+      "gene": "CYP2C19",
+      "category": "pharmacogenomics",
+      "annotation": "CYP2C19*17 ultrarapid metabolizer allele. The T allele increases enzyme activity.",
+      "sources": ["PharmGKB", "ClinVar"],
+      "riskAllele": "T",
+      "chromosome": "10",
+      "position": 96521657
+    },
+    {
+      "rsid": "rs4244285",
+      "gene": "CYP2C19",
+      "category": "pharmacogenomics",
+      "annotation": "CYP2C19*2 loss-of-function allele. The A allele reduces metabolism of clopidogrel and other drugs.",
+      "sources": ["PharmGKB", "ClinVar", "CPIC"],
+      "riskAllele": "A",
+      "chromosome": "10",
+      "position": 96541616
+    },
+    {
+      "rsid": "rs1045642",
+      "gene": "ABCB1",
+      "category": "pharmacogenomics",
+      "annotation": "C3435T variant in P-glycoprotein. May affect drug transport and bioavailability.",
+      "sources": ["PharmGKB", "SNPedia"],
+      "riskAllele": "T",
+      "chromosome": "7",
+      "position": 87138645
+    },
+    {
+      "rsid": "rs53576",
+      "gene": "OXTR",
+      "category": "neurotransmitters",
+      "annotation": "Oxytocin receptor variant. The G allele is associated with social behavior traits.",
+      "sources": ["SNPedia", "GWAS Catalog"],
+      "riskAllele": "A",
+      "chromosome": "3",
+      "position": 8804371
+    },
+    {
+      "rsid": "rs7799039",
+      "gene": "LEP",
+      "category": "nutrition",
+      "annotation": "Leptin gene variant. The A allele may be associated with obesity risk.",
+      "sources": ["SNPedia", "GWAS Catalog"],
+      "riskAllele": "A",
+      "chromosome": "7",
+      "position": 127882854
+    },
+    {
+      "rsid": "rs9939609",
+      "gene": "FTO",
+      "category": "nutrition",
+      "annotation": "FTO obesity-associated variant. The A allele is associated with increased BMI.",
+      "sources": ["GWAS Catalog", "SNPedia", "ClinVar"],
+      "riskAllele": "A",
+      "chromosome": "16",
+      "position": 53820527
+    },
+    {
+      "rsid": "rs1544410",
+      "gene": "VDR",
+      "category": "nutrition",
+      "annotation": "BsmI variant in vitamin D receptor. May affect vitamin D metabolism and bone health.",
+      "sources": ["SNPedia", "GWAS Catalog"],
+      "riskAllele": "A",
+      "chromosome": "12",
+      "position": 48239835
+    },
+    {
+      "rsid": "rs2282679",
+      "gene": "GC",
+      "category": "nutrition",
+      "annotation": "Vitamin D binding protein variant. The C allele is associated with lower vitamin D levels.",
+      "sources": ["GWAS Catalog", "SNPedia"],
+      "riskAllele": "C",
+      "chromosome": "4",
+      "position": 72608383
+    },
+    {
+      "rsid": "rs762551",
+      "gene": "CYP1A2",
+      "category": "pharmacogenomics",
+      "annotation": "Caffeine metabolism variant. The C allele is associated with slower caffeine clearance.",
+      "sources": ["PharmGKB", "SNPedia"],
+      "riskAllele": "C",
+      "chromosome": "15",
+      "position": 75041917
+    },
+    {
+      "rsid": "rs4988235",
+      "gene": "MCM6/LCT",
+      "category": "nutrition",
+      "annotation": "Lactase persistence variant. The T allele allows continued lactose digestion in adulthood.",
+      "sources": ["SNPedia", "GWAS Catalog"],
+      "riskAllele": "C",
+      "chromosome": "2",
+      "position": 136608646
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+/**
+ * SNP List Loader
+ *
+ * Handles loading the SNP list from bundled JSON (free tier)
+ * or from the API (paid tier).
+ */
+
+import type { SNPList, SNPEntry } from '../types';
+
+// Free tier SNP list is bundled with the app
+const FREE_LIST_URL = '/snp-list-free.json';
+
+/**
+ * Load the free tier SNP list (bundled with app)
+ */
+export async function loadFreeSNPList(): Promise<SNPList> {
+  const response = await fetch(FREE_LIST_URL);
+
+  if (!response.ok) {
+    throw new Error(`Failed to load SNP list: ${response.status} ${response.statusText}`);
+  }
+
+  const data: unknown = await response.json();
+  return validateSNPList(data);
+}
+
+/**
+ * Validate that loaded data matches expected SNPList structure
+ */
+function validateSNPList(data: unknown): SNPList {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid SNP list: expected an object');
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  if (typeof obj.version !== 'string') {
+    throw new Error('Invalid SNP list: missing version');
+  }
+
+  if (!Array.isArray(obj.variants)) {
+    throw new Error('Invalid SNP list: missing variants array');
+  }
+
+  // Validate each variant has required fields
+  for (const variant of obj.variants) {
+    validateSNPEntry(variant);
+  }
+
+  return {
+    version: obj.version,
+    generatedAt: typeof obj.generatedAt === 'string' ? obj.generatedAt : new Date().toISOString(),
+    count: obj.variants.length,
+    variants: obj.variants as SNPEntry[],
+  };
+}
+
+/**
+ * Validate a single SNP entry
+ */
+function validateSNPEntry(entry: unknown): asserts entry is SNPEntry {
+  if (!entry || typeof entry !== 'object') {
+    throw new Error('Invalid SNP entry: expected an object');
+  }
+
+  const obj = entry as Record<string, unknown>;
+
+  if (typeof obj.rsid !== 'string' || !obj.rsid.startsWith('rs')) {
+    throw new Error(`Invalid SNP entry: invalid rsid "${obj.rsid}"`);
+  }
+
+  if (typeof obj.gene !== 'string') {
+    throw new Error(`Invalid SNP entry: missing gene for ${obj.rsid}`);
+  }
+
+  if (typeof obj.category !== 'string') {
+    throw new Error(`Invalid SNP entry: missing category for ${obj.rsid}`);
+  }
+
+  if (typeof obj.annotation !== 'string') {
+    throw new Error(`Invalid SNP entry: missing annotation for ${obj.rsid}`);
+  }
+
+  if (!Array.isArray(obj.sources)) {
+    throw new Error(`Invalid SNP entry: missing sources for ${obj.rsid}`);
+  }
+}
+
+/**
+ * Create a lookup map from SNP list for efficient matching
+ * Key: lowercase rsid, Value: SNPEntry
+ */
+export function createSNPLookup(snpList: SNPList): Map<string, SNPEntry> {
+  const lookup = new Map<string, SNPEntry>();
+
+  for (const entry of snpList.variants) {
+    lookup.set(entry.rsid.toLowerCase(), entry);
+  }
+
+  return lookup;
+}

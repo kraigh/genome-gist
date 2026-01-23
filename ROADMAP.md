@@ -34,25 +34,25 @@
 - [x] Write parser tests with fixture files
 
 ### 1.4 Free SNP List
-- [ ] Create public/snp-list-free.json with ~15-20 well-known SNPs
-- [ ] Include: MTHFR (rs1801133, rs1801131), APOE (rs429358, rs7412), COMT (rs4680), VDR, CYP2C19, CYP2D6, etc.
-- [ ] Write annotations from public sources (ClinVar, PharmGKB, SNPedia)
-- [ ] Implement SNP list loader
+- [x] Create public/snp-list-free.json with ~15-20 well-known SNPs
+- [x] Include: MTHFR (rs1801133, rs1801131), APOE (rs429358, rs7412), COMT (rs4680), VDR, CYP2C19, CYP2D6, etc.
+- [x] Write annotations from public sources (ClinVar, PharmGKB, SNPedia)
+- [x] Implement SNP list loader
 
 ### 1.5 Extractor
-- [ ] Implement rsID matching (case-insensitive)
-- [ ] Build lookup map for efficient matching against large genome files
-- [ ] Handle missing variants (in SNP list but not in genome file)
-- [ ] Handle no-call genotypes (report as "no-call" not missing)
-- [ ] Write extractor tests
+- [x] Implement rsID matching (case-insensitive)
+- [x] Build lookup map for efficient matching against large genome files
+- [x] Handle missing variants (in SNP list but not in genome file)
+- [x] Handle no-call genotypes (report as "no-call" not missing)
+- [x] Write extractor tests
 
 ### 1.6 YAML Output
-- [ ] Choose and install js-yaml library
-- [ ] Implement YAML serializer with proper formatting
-- [ ] Generate metadata block (tool, version, date, source format)
-- [ ] Draft medical/legal disclaimer text
-- [ ] Include disclaimer in output metadata
-- [ ] Write output tests
+- [x] Choose and install js-yaml library
+- [x] Implement YAML serializer with proper formatting
+- [x] Generate metadata block (tool, version, date, source format)
+- [x] Draft medical/legal disclaimer text
+- [x] Include disclaimer in output metadata
+- [x] Write output tests
 
 ### 1.7 UI - File Upload
 - [ ] Create upload zone component (dashed border, instructions)
