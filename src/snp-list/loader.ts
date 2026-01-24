@@ -53,10 +53,18 @@ function validateSNPList(data: unknown): SNPList {
     validateSNPEntry(variant);
   }
 
+  // Validate count field matches array length if provided
+  const actualCount = obj.variants.length;
+  if (typeof obj.count === 'number' && obj.count !== actualCount) {
+    console.warn(
+      `SNP list count mismatch: JSON says ${obj.count}, but array has ${actualCount} entries`
+    );
+  }
+
   return {
     version: obj.version,
     generatedAt: typeof obj.generatedAt === 'string' ? obj.generatedAt : new Date().toISOString(),
-    count: obj.variants.length,
+    count: actualCount,
     variants: obj.variants as SNPEntry[],
   };
 }

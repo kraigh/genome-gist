@@ -31,6 +31,7 @@ export interface ParseResult {
     generatedAt?: string; // Date from file header
     build?: string; // Reference genome build (e.g., "37")
   };
+  warnings?: string[]; // Non-fatal issues encountered during parsing
 }
 
 /**

@@ -77,12 +77,8 @@ export function parse23andMe(content: string): ParseResult {
     throw createParseError('No valid variants found in file. Please check the file format.');
   }
 
-  // Warn if many parse failures (but still return results)
-  if (warnings.length > 100) {
-    console.warn(`Parser encountered ${warnings.length} unparseable lines`);
-  }
-
-  return {
+  // Build result with optional warnings
+  const result: ParseResult = {
     format: '23andme-v5',
     variants,
     metadata: {
@@ -90,6 +86,15 @@ export function parse23andMe(content: string): ParseResult {
       build,
     },
   };
+
+  // Include warnings if there were parse failures
+  if (warnings.length > 0) {
+    result.warnings = [
+      `${warnings.length} line${warnings.length === 1 ? '' : 's'} could not be parsed`,
+    ];
+  }
+
+  return result;
 }
 
 /**

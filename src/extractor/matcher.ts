@@ -11,9 +11,7 @@ import type {
   ExtractionMetadata,
   ParseResult,
 } from '../types';
-
-const TOOL_NAME = 'GenomeGist';
-const TOOL_VERSION = '1.0.0';
+import { VERSION, TOOL_NAME } from '../version';
 
 const DISCLAIMER = `DISCLAIMER: This file contains genetic information extracted for research and educational purposes only. This is NOT medical advice. Genetic variants may have different effects depending on other genetic and environmental factors. Consult a healthcare provider or genetic counselor for interpretation of genetic data. The annotations are derived from public databases and may not reflect the most current scientific understanding.`;
 
@@ -67,7 +65,7 @@ export function extractVariants(
 
   const metadata: ExtractionMetadata = {
     tool: TOOL_NAME,
-    version: TOOL_VERSION,
+    version: VERSION,
     date: new Date().toISOString(),
     sourceFormat: parseResult.format,
     sourceVariantCount: parseResult.variants.length,

@@ -1,6 +1,5 @@
 /**
  * GenomeGist - Main entry point
- * Version 1.0.0
  */
 
 import { parseGenomeFile, formatDisplayName } from './parser';
@@ -9,6 +8,7 @@ import { extractVariants } from './extractor';
 import { toYAML, generateFilename, calculateSize } from './output';
 import type { SNPList, ExtractionResult } from './types';
 import { ParseError } from './types';
+import { VERSION, TOOL_NAME } from './version';
 
 /**
  * Safely get a DOM element by ID with type checking
@@ -44,7 +44,7 @@ async function init(): Promise<void> {
     showStatus('Loading SNP list...');
     snpList = await loadFreeSNPList();
     hideStatus();
-    console.log(`GenomeGist v1.0.0 loaded. SNP list v${snpList.version} with ${snpList.count} variants.`);
+    console.log(`${TOOL_NAME} v${VERSION} loaded. SNP list v${snpList.version} with ${snpList.count} variants.`);
   } catch (err) {
     showError('Failed to load SNP list. Please refresh the page.');
     console.error('Failed to load SNP list:', err);
