@@ -176,6 +176,66 @@ section li {
   color: var(--color-error);
 }
 
+/* Format selector */
+.format-selector {
+  margin: var(--spacing-md) 0;
+}
+
+.format-label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+}
+
+.format-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.format-option {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius);
+  transition: background-color 0.15s;
+}
+
+.format-option:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.format-option input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.format-name {
+  font-weight: 500;
+  min-width: 70px;
+}
+
+.format-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Download row */
+.download-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.file-size {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
 /* Buttons */
 .btn {
   display: inline-block;

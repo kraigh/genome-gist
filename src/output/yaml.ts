@@ -1,15 +1,15 @@
 /**
  * YAML Output Generator
  *
- * Converts extraction results to YAML format for download.
- * Uses js-yaml for serialization.
+ * Converts extraction results to various output formats.
+ * Supports detailed (human-readable), compact (AI-optimized), and minimal (CSV-style).
  */
 
 import * as yaml from 'js-yaml';
-import type { ExtractionResult, MatchedVariant, MissingVariant, SNPCategory } from '../types';
+import type { ExtractionResult, MissingVariant, SNPCategory, OutputFormat } from '../types';
 
-/** YAML output structure */
-interface YAMLOutput {
+/** Detailed YAML output structure */
+interface DetailedOutput {
   metadata: {
     tool: string;
     version: string;
@@ -25,22 +25,41 @@ interface YAMLOutput {
     variants_missing: number;
     total_in_snp_list: number;
   };
-  variants: FormattedVariant[];
+  variants: DetailedVariant[];
   missing_variants?: FormattedMissingVariant[];
 }
 
-/** Formatted variant for YAML output */
-interface FormattedVariant {
+/** Detailed variant format */
+interface DetailedVariant {
   rsid: string;
   gene: string;
   genotype: string;
   category: SNPCategory;
   status?: 'no-call';
   annotation: string;
-  sources: string[];
 }
 
-/** Formatted missing variant for YAML output */
+/** Compact output structure */
+interface CompactOutput {
+  metadata: {
+    tool: string;
+    version: string;
+    date: string;
+    format: string;
+    disclaimer: string;
+  };
+  variants: CompactVariant[];
+  missing?: string[];
+}
+
+/** Compact variant format */
+interface CompactVariant {
+  rsid: string;
+  gene: string;
+  genotype: string;
+}
+
+/** Formatted missing variant for detailed output */
 interface FormattedMissingVariant {
   rsid: string;
   gene: string;
@@ -48,12 +67,27 @@ interface FormattedMissingVariant {
   reason: MissingVariant['reason'];
 }
 
+const COMPACT_DISCLAIMER = 'For research/educational use only. Not medical advice.';
+
 /**
- * Convert extraction result to YAML string
+ * Convert extraction result to output string
  */
-export function toYAML(result: ExtractionResult): string {
-  // Build a clean output structure
-  const output: YAMLOutput = {
+export function toYAML(result: ExtractionResult, format: OutputFormat = 'detailed'): string {
+  switch (format) {
+    case 'detailed':
+      return toDetailedYAML(result);
+    case 'compact':
+      return toCompactYAML(result);
+    case 'minimal':
+      return toMinimalCSV(result);
+  }
+}
+
+/**
+ * Detailed format - full output with annotations (human-readable)
+ */
+function toDetailedYAML(result: ExtractionResult): string {
+  const output: DetailedOutput = {
     metadata: {
       tool: result.metadata.tool,
       version: result.metadata.version,
@@ -69,10 +103,21 @@ export function toYAML(result: ExtractionResult): string {
       variants_missing: result.summary.missing,
       total_in_snp_list: result.summary.total,
     },
-    variants: result.variants.map(formatVariant),
+    variants: result.variants.map((v) => {
+      const variant: DetailedVariant = {
+        rsid: v.rsid,
+        gene: v.gene,
+        genotype: v.genotype,
+        category: v.category,
+        annotation: v.annotation,
+      };
+      if (v.status === 'no-call') {
+        variant.status = 'no-call';
+      }
+      return variant;
+    }),
   };
 
-  // Add missing variants section if any
   if (result.missing.length > 0) {
     output.missing_variants = result.missing.map((v) => ({
       rsid: v.rsid,
@@ -92,39 +137,71 @@ export function toYAML(result: ExtractionResult): string {
 }
 
 /**
- * Format a single variant for YAML output
+ * Compact format - rsid, gene, genotype only (AI-optimized)
  */
-function formatVariant(variant: MatchedVariant): FormattedVariant {
-  const output: FormattedVariant = {
-    rsid: variant.rsid,
-    gene: variant.gene,
-    genotype: variant.genotype,
-    category: variant.category,
-    annotation: variant.annotation,
-    sources: variant.sources,
+function toCompactYAML(result: ExtractionResult): string {
+  const output: CompactOutput = {
+    metadata: {
+      tool: result.metadata.tool,
+      version: result.metadata.version,
+      date: result.metadata.date.split('T')[0] ?? result.metadata.date,
+      format: result.metadata.sourceFormat,
+      disclaimer: COMPACT_DISCLAIMER,
+    },
+    variants: result.variants.map((v) => ({
+      rsid: v.rsid,
+      gene: v.gene,
+      genotype: v.genotype,
+    })),
   };
 
-  // Add status only if no-call
-  if (variant.status === 'no-call') {
-    output.status = 'no-call';
+  if (result.missing.length > 0) {
+    output.missing = result.missing.map((v) => v.rsid);
   }
 
-  return output;
+  return yaml.dump(output, {
+    lineWidth: 120,
+    noRefs: true,
+    sortKeys: false,
+    flowLevel: -1,
+  });
+}
+
+/**
+ * Minimal format - CSV-style for maximum density
+ */
+function toMinimalCSV(result: ExtractionResult): string {
+  const lines: string[] = [
+    `# ${result.metadata.tool} v${result.metadata.version} | ${result.metadata.date.split('T')[0]} | ${COMPACT_DISCLAIMER}`,
+    '# rsid,gene,genotype',
+  ];
+
+  for (const v of result.variants) {
+    lines.push(`${v.rsid},${v.gene},${v.genotype}`);
+  }
+
+  if (result.missing.length > 0) {
+    lines.push(`# missing: ${result.missing.map((v) => v.rsid).join(',')}`);
+  }
+
+  return lines.join('\n') + '\n';
 }
 
 /**
  * Generate filename for download
  */
-export function generateFilename(): string {
+export function generateFilename(format: OutputFormat = 'detailed'): string {
   const date = new Date().toISOString().split('T')[0];
-  return `genomegist-results-${date}.yaml`;
+  const ext = format === 'minimal' ? 'csv' : 'yaml';
+  const suffix = format === 'detailed' ? '' : `-${format}`;
+  return `genomegist-results${suffix}-${date}.${ext}`;
 }
 
 /**
  * Calculate approximate file size for display
  */
-export function calculateSize(yamlContent: string): string {
-  const bytes = new Blob([yamlContent]).size;
+export function calculateSize(content: string): string {
+  const bytes = new Blob([content]).size;
 
   if (bytes < 1024) {
     return `${bytes} B`;
@@ -132,5 +209,19 @@ export function calculateSize(yamlContent: string): string {
     return `${(bytes / 1024).toFixed(1)} KB`;
   } else {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+}
+
+/**
+ * Get human-readable format name
+ */
+export function formatDisplayName(format: OutputFormat): string {
+  switch (format) {
+    case 'detailed':
+      return 'Detailed (human-readable)';
+    case 'compact':
+      return 'Compact (AI-optimized)';
+    case 'minimal':
+      return 'Minimal (CSV)';
   }
 }

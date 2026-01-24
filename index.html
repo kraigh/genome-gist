@@ -30,7 +30,32 @@
 
           <div id="results" class="results" hidden>
             <p id="results-summary"></p>
-            <button id="download-btn" class="btn btn-primary">Download Results</button>
+
+            <div class="format-selector">
+              <label class="format-label">Output format:</label>
+              <div class="format-options">
+                <label class="format-option">
+                  <input type="radio" name="output-format" value="detailed" checked />
+                  <span class="format-name">Detailed</span>
+                  <span class="format-desc">Human-readable with annotations</span>
+                </label>
+                <label class="format-option">
+                  <input type="radio" name="output-format" value="compact" />
+                  <span class="format-name">Compact</span>
+                  <span class="format-desc">AI-optimized, smaller file</span>
+                </label>
+                <label class="format-option">
+                  <input type="radio" name="output-format" value="minimal" />
+                  <span class="format-name">Minimal</span>
+                  <span class="format-desc">CSV format, smallest size</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="download-row">
+              <button id="download-btn" class="btn btn-primary">Download Results</button>
+              <span id="file-size" class="file-size"></span>
+            </div>
           </div>
 
           <div id="error" class="error" hidden>

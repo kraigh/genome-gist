@@ -6,9 +6,12 @@ import { parseGenomeFile, formatDisplayName } from './parser';
 import { loadFreeSNPList } from './snp-list';
 import { extractVariants } from './extractor';
 import { toYAML, generateFilename, calculateSize } from './output';
-import type { SNPList, ExtractionResult } from './types';
+import type { SNPList, ExtractionResult, OutputFormat } from './types';
 import { ParseError } from './types';
 import { VERSION, TOOL_NAME } from './version';
+
+// localStorage key for format preference
+const FORMAT_STORAGE_KEY = 'genomegist-output-format';
 
 /**
  * Safely get a DOM element by ID with type checking
@@ -30,16 +33,37 @@ const statusText = getElement<HTMLParagraphElement>('status-text');
 const resultsDiv = getElement<HTMLDivElement>('results');
 const resultsSummary = getElement<HTMLParagraphElement>('results-summary');
 const downloadBtn = getElement<HTMLButtonElement>('download-btn');
+const fileSizeSpan = getElement<HTMLSpanElement>('file-size');
 const errorDiv = getElement<HTMLDivElement>('error');
 const errorText = getElement<HTMLParagraphElement>('error-text');
 
 // State
-let currentYAML: string | null = null;
+let currentResult: ExtractionResult | null = null;
 let snpList: SNPList | null = null;
 let currentReader: FileReader | null = null;
+let selectedFormat: OutputFormat = 'detailed';
 
 // Initialize
 async function init(): Promise<void> {
+  // Restore format preference
+  const savedFormat = localStorage.getItem(FORMAT_STORAGE_KEY);
+  if (savedFormat && isValidFormat(savedFormat)) {
+    selectedFormat = savedFormat;
+    setFormatRadio(savedFormat);
+  }
+
+  // Set up format change listeners
+  const formatInputs = document.querySelectorAll<HTMLInputElement>('input[name="output-format"]');
+  formatInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      if (isValidFormat(input.value)) {
+        selectedFormat = input.value;
+        localStorage.setItem(FORMAT_STORAGE_KEY, selectedFormat);
+        updateOutputPreview();
+      }
+    });
+  });
+
   try {
     showStatus('Loading SNP list...');
     snpList = await loadFreeSNPList();
@@ -48,6 +72,17 @@ async function init(): Promise<void> {
   } catch (err) {
     showError('Failed to load SNP list. Please refresh the page.');
     console.error('Failed to load SNP list:', err);
+  }
+}
+
+function isValidFormat(value: string): value is OutputFormat {
+  return value === 'detailed' || value === 'compact' || value === 'minimal';
+}
+
+function setFormatRadio(format: OutputFormat): void {
+  const input = document.querySelector<HTMLInputElement>(`input[name="output-format"][value="${format}"]`);
+  if (input) {
+    input.checked = true;
   }
 }
 
@@ -63,13 +98,14 @@ function hideStatus(): void {
   statusDiv.hidden = true;
 }
 
-function showResults(result: ExtractionResult, yamlContent: string): void {
+function showResults(result: ExtractionResult): void {
   statusDiv.hidden = true;
   resultsDiv.hidden = false;
   errorDiv.hidden = true;
 
+  currentResult = result;
+
   const { found, noCall, missing, total } = result.summary;
-  const fileSize = calculateSize(yamlContent);
   const format = formatDisplayName(result.metadata.sourceFormat);
 
   let summaryText = `Found ${found} of ${total} variants`;
@@ -79,13 +115,22 @@ function showResults(result: ExtractionResult, yamlContent: string): void {
   if (missing > 0) {
     summaryText += `, ${missing} not in file`;
   }
-  summaryText += `. Source: ${format}. Download size: ${fileSize}`;
+  summaryText += `. Source: ${format}.`;
 
   resultsSummary.textContent = summaryText;
-  currentYAML = yamlContent;
 
-  // Update download button text with size
-  downloadBtn.textContent = `Download Results (${fileSize})`;
+  // Update file size display
+  updateOutputPreview();
+}
+
+function updateOutputPreview(): void {
+  if (!currentResult) return;
+
+  const output = toYAML(currentResult, selectedFormat);
+  const fileSize = calculateSize(output);
+
+  fileSizeSpan.textContent = fileSize;
+  downloadBtn.textContent = 'Download Results';
 }
 
 function showError(message: string): void {
@@ -168,12 +213,9 @@ function processGenomeFile(content: string): void {
     // Extract matching variants
     const extractionResult = extractVariants(parseResult, snpList);
 
-    // Generate YAML output
-    showStatus('Generating output...');
-    const yamlContent = toYAML(extractionResult);
-
-    // Show results
-    showResults(extractionResult, yamlContent);
+    // Show results (YAML generation happens on demand)
+    showStatus('Processing complete.');
+    showResults(extractionResult);
   } catch (err) {
     // Handle parse errors
     if (err instanceof ParseError) {
@@ -193,11 +235,13 @@ function processGenomeFile(content: string): void {
 
 // Download handler
 function downloadResults(): void {
-  if (!currentYAML) return;
+  if (!currentResult) return;
 
-  const blob = new Blob([currentYAML], { type: 'text/yaml' });
+  const output = toYAML(currentResult, selectedFormat);
+  const mimeType = selectedFormat === 'minimal' ? 'text/csv' : 'text/yaml';
+  const blob = new Blob([output], { type: mimeType });
   const url = URL.createObjectURL(blob);
-  const filename = generateFilename();
+  const filename = generateFilename(selectedFormat);
 
   const a = document.createElement('a');
   a.href = url;

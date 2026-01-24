@@ -98,6 +98,13 @@
 - [x] Fix broken #disclaimer anchor link (index.html)
 - [x] Centralize version string to prevent drift
 
+### 1.14 Output Format Options
+- [x] Add OutputFormat type (detailed, compact, minimal)
+- [x] Update YAML generator to support all formats
+- [x] Add format selector UI (radio buttons)
+- [x] Persist format preference in localStorage
+- [x] Update download button to reflect selected format
+
 ---
 
 ## Phase 2: Paid Tier

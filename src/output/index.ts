@@ -2,4 +2,4 @@
  * Output module - main entry point
  */
 
-export { toYAML, generateFilename, calculateSize } from './yaml';
+export { toYAML, generateFilename, calculateSize, formatDisplayName as outputFormatName } from './yaml';

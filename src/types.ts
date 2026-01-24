@@ -148,6 +148,19 @@ export interface ExtractionResult {
 }
 
 // =============================================================================
+// Output Format Types
+// =============================================================================
+
+/**
+ * Output format options for AI context optimization
+ *
+ * - detailed: Full output with annotations (human-readable, ~180 chars/variant)
+ * - compact: rsid, gene, genotype only (AI-optimized, ~35 chars/variant)
+ * - minimal: CSV-style dense format (maximum density, ~20 chars/variant)
+ */
+export type OutputFormat = 'detailed' | 'compact' | 'minimal';
+
+// =============================================================================
 // Application State Types
 // =============================================================================
 
