@@ -6,14 +6,54 @@
  */
 
 import * as yaml from 'js-yaml';
-import type { ExtractionResult, MatchedVariant } from '../types';
+import type { ExtractionResult, MatchedVariant, MissingVariant, SNPCategory } from '../types';
+
+/** YAML output structure */
+interface YAMLOutput {
+  metadata: {
+    tool: string;
+    version: string;
+    extraction_date: string;
+    source_format: string;
+    source_variant_count: number;
+    snp_list_version: string;
+    disclaimer: string;
+  };
+  summary: {
+    variants_found: number;
+    variants_no_call: number;
+    variants_missing: number;
+    total_in_snp_list: number;
+  };
+  variants: FormattedVariant[];
+  missing_variants?: FormattedMissingVariant[];
+}
+
+/** Formatted variant for YAML output */
+interface FormattedVariant {
+  rsid: string;
+  gene: string;
+  genotype: string;
+  category: SNPCategory;
+  status?: 'no-call';
+  annotation: string;
+  sources: string[];
+}
+
+/** Formatted missing variant for YAML output */
+interface FormattedMissingVariant {
+  rsid: string;
+  gene: string;
+  category: SNPCategory;
+  reason: MissingVariant['reason'];
+}
 
 /**
  * Convert extraction result to YAML string
  */
 export function toYAML(result: ExtractionResult): string {
   // Build a clean output structure
-  const output = {
+  const output: YAMLOutput = {
     metadata: {
       tool: result.metadata.tool,
       version: result.metadata.version,
@@ -34,7 +74,7 @@ export function toYAML(result: ExtractionResult): string {
 
   // Add missing variants section if any
   if (result.missing.length > 0) {
-    (output as Record<string, unknown>).missing_variants = result.missing.map((v) => ({
+    output.missing_variants = result.missing.map((v) => ({
       rsid: v.rsid,
       gene: v.gene,
       category: v.category,
@@ -54,21 +94,20 @@ export function toYAML(result: ExtractionResult): string {
 /**
  * Format a single variant for YAML output
  */
-function formatVariant(variant: MatchedVariant): Record<string, unknown> {
-  const output: Record<string, unknown> = {
+function formatVariant(variant: MatchedVariant): FormattedVariant {
+  const output: FormattedVariant = {
     rsid: variant.rsid,
     gene: variant.gene,
     genotype: variant.genotype,
     category: variant.category,
+    annotation: variant.annotation,
+    sources: variant.sources,
   };
 
   // Add status only if no-call
   if (variant.status === 'no-call') {
     output.status = 'no-call';
   }
-
-  output.annotation = variant.annotation;
-  output.sources = variant.sources;
 
   return output;
 }

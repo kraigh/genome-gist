@@ -36,24 +36,30 @@ function is23andMe(header: string): boolean {
 
 /**
  * Detect specific 23andMe version from header
+ *
+ * Version history:
+ * - v3: Used build 36 (GRCh36)
+ * - v4: Used build 37 (GRCh37) with Annotation Release 103
+ * - v5: Uses build 37 (GRCh37) with Annotation Release 104
  */
 function detect23andMeVersion(header: string): GenomeFormat {
-  // v5 uses build 37 and has specific header format
-  if (header.includes('build 37') || header.includes('Annotation Release 104')) {
+  // v5 uses Annotation Release 104
+  if (header.includes('Annotation Release 104')) {
     return '23andme-v5';
   }
 
-  // v4 typically mentions build 37 but different annotation
+  // v4 uses Annotation Release 103
+  if (header.includes('Annotation Release 103')) {
+    return '23andme-v4';
+  }
+
+  // v3 used build 36
   if (header.includes('build 36')) {
     return '23andme-v3';
   }
 
-  // Default to v5 for recent 23andMe files
-  if (header.includes('23andMe')) {
-    return '23andme-v5';
-  }
-
-  return '23andme-v5'; // Assume v5 if 23andMe-like but version unclear
+  // Default to v5 for build 37 or recent 23andMe files without specific version
+  return '23andme-v5';
 }
 
 /**

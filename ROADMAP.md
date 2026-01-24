@@ -87,10 +87,10 @@
 
 ### 1.12 Code Review Fixes (Important)
 - [x] Wrap JSON parsing in try-catch with helpful error (snp-list/loader.ts)
-- [ ] Fix or remove v4 version detection inconsistency (parser/detector.ts)
+- [x] Fix v4 version detection based on Annotation Release 103 (parser/detector.ts)
 - [ ] Expose parse warnings to caller instead of console.warn (parser/23andme.ts)
-- [ ] Add FileReader abort handling for race conditions (main.ts)
-- [ ] Define proper YAMLOutput type instead of type assertion (output/yaml.ts)
+- [x] Add FileReader abort handling for race conditions (main.ts)
+- [x] Define proper YAMLOutput type instead of type assertion (output/yaml.ts)
 
 ### 1.13 Code Review Fixes (Minor)
 - [x] Remove unused createSNPLookup export (snp-list/loader.ts)

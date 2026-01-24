@@ -36,6 +36,7 @@ const errorText = getElement<HTMLParagraphElement>('error-text');
 // State
 let currentYAML: string | null = null;
 let snpList: SNPList | null = null;
+let currentReader: FileReader | null = null;
 
 // Initialize
 async function init(): Promise<void> {
@@ -121,9 +122,17 @@ function handleFile(file: File): void {
 
   showStatus(`Reading ${file.name}...`);
 
+  // Abort any in-progress file read to prevent race conditions
+  if (currentReader) {
+    currentReader.abort();
+  }
+
   const reader = new FileReader();
+  currentReader = reader;
 
   reader.onload = (e) => {
+    // Ignore if this reader was superseded by a new one
+    if (currentReader !== reader) return;
     const content = e.target?.result as string;
     if (!content) {
       showError('Failed to read file content.');
