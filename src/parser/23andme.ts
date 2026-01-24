@@ -9,7 +9,15 @@
  * - Some lines may have single character genotypes for X/Y/MT in males
  */
 
-import type { GenomeVariant, ParseResult, ParseError } from '../types';
+import type { GenomeVariant, ParseResult } from '../types';
+import { ParseError } from '../types';
+
+/** Internal error tracking during parsing */
+interface ParseWarning {
+  message: string;
+  line: number;
+  details?: string;
+}
 
 /**
  * Parse a 23andMe genome file
@@ -20,7 +28,7 @@ import type { GenomeVariant, ParseResult, ParseError } from '../types';
 export function parse23andMe(content: string): ParseResult {
   const lines = content.split('\n');
   const variants: GenomeVariant[] = [];
-  const errors: ParseError[] = [];
+  const warnings: ParseWarning[] = [];
 
   let generatedAt: string | undefined;
   let build: string | undefined;
@@ -55,8 +63,8 @@ export function parse23andMe(content: string): ParseResult {
     if (variant) {
       variants.push(variant);
     } else if (trimmed.length > 0) {
-      // Only track errors for non-empty lines that failed to parse
-      errors.push({
+      // Only track warnings for non-empty lines that failed to parse
+      warnings.push({
         message: 'Failed to parse line',
         line: i + 1,
         details: trimmed.slice(0, 100),
@@ -69,9 +77,9 @@ export function parse23andMe(content: string): ParseResult {
     throw createParseError('No valid variants found in file. Please check the file format.');
   }
 
-  // Warn if many errors (but still return results)
-  if (errors.length > 100) {
-    console.warn(`Parser encountered ${errors.length} unparseable lines`);
+  // Warn if many parse failures (but still return results)
+  if (warnings.length > 100) {
+    console.warn(`Parser encountered ${warnings.length} unparseable lines`);
   }
 
   return {
@@ -170,5 +178,5 @@ function isValidGenotype(genotype: string): boolean {
  * Create a ParseError
  */
 function createParseError(message: string, line?: number, details?: string): ParseError {
-  return { message, line, details };
+  return new ParseError(message, line, details);
 }

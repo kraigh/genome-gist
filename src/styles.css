@@ -241,6 +241,29 @@ section li {
   margin-top: var(--spacing-sm);
 }
 
+/* Disclaimer section */
+.disclaimer-section {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: var(--color-background-alt);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+}
+
+.disclaimer-section h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.disclaimer-section p {
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-secondary);
+}
+
+.disclaimer-section p:last-child {
+  margin-bottom: 0;
+}
+
 /* Footer */
 footer {
   margin-top: var(--spacing-xl);

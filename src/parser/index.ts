@@ -5,7 +5,8 @@
 export { detectFormat, formatDisplayName } from './detector';
 export { parse23andMe } from './23andme';
 
-import type { ParseResult, ParseError } from '../types';
+import type { ParseResult } from '../types';
+import { ParseError } from '../types';
 import { detectFormat } from './detector';
 import { parse23andMe } from './23andme';
 
@@ -35,8 +36,5 @@ export function parseGenomeFile(content: string): ParseResult {
 }
 
 function createUnsupportedFormatError(message: string): ParseError {
-  return {
-    message,
-    details: 'Supported formats: 23andMe (.txt)',
-  };
+  return new ParseError(message, undefined, 'Supported formats: 23andMe (.txt)');
 }

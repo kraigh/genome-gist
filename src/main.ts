@@ -7,18 +7,31 @@ import { parseGenomeFile, formatDisplayName } from './parser';
 import { loadFreeSNPList } from './snp-list';
 import { extractVariants } from './extractor';
 import { toYAML, generateFilename, calculateSize } from './output';
-import type { SNPList, ExtractionResult, ParseError } from './types';
+import type { SNPList, ExtractionResult } from './types';
+import { ParseError } from './types';
 
-// DOM elements
-const uploadZone = document.getElementById('upload-zone') as HTMLDivElement;
-const fileInput = document.getElementById('file-input') as HTMLInputElement;
-const statusDiv = document.getElementById('status') as HTMLDivElement;
-const statusText = document.getElementById('status-text') as HTMLParagraphElement;
-const resultsDiv = document.getElementById('results') as HTMLDivElement;
-const resultsSummary = document.getElementById('results-summary') as HTMLParagraphElement;
-const downloadBtn = document.getElementById('download-btn') as HTMLButtonElement;
-const errorDiv = document.getElementById('error') as HTMLDivElement;
-const errorText = document.getElementById('error-text') as HTMLParagraphElement;
+/**
+ * Safely get a DOM element by ID with type checking
+ * @throws Error if element is not found
+ */
+function getElement<T extends HTMLElement>(id: string): T {
+  const el = document.getElementById(id);
+  if (!el) {
+    throw new Error(`Required DOM element #${id} not found. Check index.html.`);
+  }
+  return el as T;
+}
+
+// DOM elements (with null checks)
+const uploadZone = getElement<HTMLDivElement>('upload-zone');
+const fileInput = getElement<HTMLInputElement>('file-input');
+const statusDiv = getElement<HTMLDivElement>('status');
+const statusText = getElement<HTMLParagraphElement>('status-text');
+const resultsDiv = getElement<HTMLDivElement>('results');
+const resultsSummary = getElement<HTMLParagraphElement>('results-summary');
+const downloadBtn = getElement<HTMLButtonElement>('download-btn');
+const errorDiv = getElement<HTMLDivElement>('error');
+const errorText = getElement<HTMLParagraphElement>('error-text');
 
 // State
 let currentYAML: string | null = null;
@@ -154,14 +167,17 @@ function processGenomeFile(content: string): void {
     showResults(extractionResult, yamlContent);
   } catch (err) {
     // Handle parse errors
-    const parseError = err as ParseError;
-    let errorMessage = parseError.message || 'Failed to process file.';
-
-    if (parseError.details) {
-      errorMessage += ` ${parseError.details}`;
+    if (err instanceof ParseError) {
+      let errorMessage = err.message;
+      if (err.details) {
+        errorMessage += ` ${err.details}`;
+      }
+      showError(errorMessage);
+    } else if (err instanceof Error) {
+      showError(err.message || 'Failed to process file.');
+    } else {
+      showError('An unexpected error occurred. Please try again.');
     }
-
-    showError(errorMessage);
     console.error('Processing error:', err);
   }
 }

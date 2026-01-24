@@ -81,6 +81,23 @@
 - [ ] Cross-browser testing (Chrome, Firefox, Safari)
 - [ ] Mobile responsiveness check
 
+### 1.11 Code Review Fixes (Critical)
+- [x] Create proper ParseError class extending Error (parser/index.ts)
+- [x] Add null checks for DOM element assertions (main.ts)
+
+### 1.12 Code Review Fixes (Important)
+- [x] Wrap JSON parsing in try-catch with helpful error (snp-list/loader.ts)
+- [ ] Fix or remove v4 version detection inconsistency (parser/detector.ts)
+- [ ] Expose parse warnings to caller instead of console.warn (parser/23andme.ts)
+- [ ] Add FileReader abort handling for race conditions (main.ts)
+- [ ] Define proper YAMLOutput type instead of type assertion (output/yaml.ts)
+
+### 1.13 Code Review Fixes (Minor)
+- [x] Remove unused createSNPLookup export (snp-list/loader.ts)
+- [ ] Validate SNP list count field matches array length (snp-list/loader.ts)
+- [x] Fix broken #disclaimer anchor link (index.html)
+- [ ] Centralize version string to prevent drift
+
 ---
 
 ## Phase 2: Paid Tier
@@ -95,7 +112,7 @@
 - [ ] Create validate-token API endpoint (separate repo/service)
 - [ ] Implement client-side token validation call
 - [ ] Fetch full SNP list on valid token
-- [ ] Handle API errors gracefully
+- [ ] Handle API errors gracefully (document error handling strategy for API error types)
 - [ ] Implement basic obfuscation for SNP list in memory
 
 ### 2.3 Stripe Integration

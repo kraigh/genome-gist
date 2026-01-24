@@ -27,6 +27,49 @@ The output file should be small (<10MB) so it can be easily uploaded to AI tools
 
 **Paid tier:** User enters a token (purchased via Stripe). Token is validated via API, which returns the proprietary SNP list. Token is valid for ~3 uses.
 
+## Token API Contract
+
+Base URL: `https://api.genomegist.com`
+
+Token format: `gg_<24-char-random>` (e.g., `gg_a1b2c3d4e5f6g7h8i9j0k1l2`)
+
+### POST /api/validate-token
+
+**Request:**
+```json
+{ "token": "gg_abc123..." }
+```
+
+**Response (success):**
+```json
+{ "valid": true, "usesRemaining": 2, "snpList": { ... } }
+```
+
+**Response (invalid/exhausted):**
+```json
+{ "valid": false, "error": "invalid_token" | "exhausted" }
+```
+
+### POST /api/recover-token
+
+**Request:**
+```json
+{ "email": "user@example.com" }
+```
+
+**Response (always succeeds to prevent enumeration):**
+```json
+{ "success": true }
+```
+
+### Frontend Token Flow
+
+1. User enters token in input field
+2. Call `/api/validate-token` with the token
+3. On success: store token in localStorage, use returned `snpList` for extraction
+4. On failure: show appropriate error ("Invalid token" or "Token exhausted")
+5. Display `usesRemaining` to user after successful validation
+
 ## Critical Constraints
 
 - **Privacy is paramount.** Genome data never leaves the browser. Token validation and SNP list fetch are the only server calls.
@@ -60,4 +103,7 @@ The SNP list (from the pipeline repo) defines what fields are available for each
 
 > Document architectural and implementation decisions here as you build.
 
--
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2025-01-23 | Token format: `gg_<random>` | Opaque tokens stored in backend KV, supports use-counting and revocation |
+| 2025-01-23 | API at api.genomegist.com | Separate subdomain for Worker API |

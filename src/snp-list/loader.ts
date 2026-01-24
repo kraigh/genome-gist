@@ -20,7 +20,13 @@ export async function loadFreeSNPList(): Promise<SNPList> {
     throw new Error(`Failed to load SNP list: ${response.status} ${response.statusText}`);
   }
 
-  const data: unknown = await response.json();
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error('Failed to parse SNP list: invalid JSON format');
+  }
+
   return validateSNPList(data);
 }
 
@@ -84,18 +90,4 @@ function validateSNPEntry(entry: unknown): asserts entry is SNPEntry {
   if (!Array.isArray(obj.sources)) {
     throw new Error(`Invalid SNP entry: missing sources for ${obj.rsid}`);
   }
-}
-
-/**
- * Create a lookup map from SNP list for efficient matching
- * Key: lowercase rsid, Value: SNPEntry
- */
-export function createSNPLookup(snpList: SNPList): Map<string, SNPEntry> {
-  const lookup = new Map<string, SNPEntry>();
-
-  for (const entry of snpList.variants) {
-    lookup.set(entry.rsid.toLowerCase(), entry);
-  }
-
-  return lookup;
 }

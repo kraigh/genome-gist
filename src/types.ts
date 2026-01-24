@@ -34,12 +34,20 @@ export interface ParseResult {
 }
 
 /**
- * Parse error with context
+ * Parse error with context - extends Error for proper error handling
  */
-export interface ParseError {
-  message: string;
+export class ParseError extends Error {
   line?: number;
   details?: string;
+
+  constructor(message: string, line?: number, details?: string) {
+    super(message);
+    this.name = 'ParseError';
+    this.line = line;
+    this.details = details;
+    // Ensure prototype chain is correct for instanceof checks
+    Object.setPrototypeOf(this, ParseError.prototype);
+  }
 }
 
 // =============================================================================
