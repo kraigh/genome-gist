@@ -105,6 +105,21 @@
 - [x] Persist format preference in localStorage
 - [x] Update download button to reflect selected format
 
+### 1.15 Two-Step UX Flow
+- [x] Add preview step after parsing (shows format, variant count)
+- [x] Add category filter with Wellness/Full Report presets
+- [x] Add expandable category checkboxes for customization
+- [x] Show estimated matches that updates as categories change
+- [x] Add back button to return to upload screen
+- [x] Persist category preference to localStorage
+
+### 1.16 Content & Copy Improvements
+- [x] Expand "What is this?" with SNP explanation
+- [x] Add guidance on using output with AI tools
+- [x] Add "What's Included" section with category descriptions
+- [x] Add FAQ accordion section (6 questions)
+- [x] Visual styling improvements (teal palette, cards, icons)
+
 ---
 
 ## Phase 2: Paid Tier
@@ -156,7 +171,7 @@
 
 ### 3.3 UX Improvements
 - [ ] Improve error messages with suggestions
-- [ ] Add format detection feedback before processing
+- [x] Add format detection feedback before processing
 - [ ] Refine mobile layout
 
 ---
@@ -186,3 +201,5 @@
 | 2025-01-23 | js-yaml for YAML output | Standard, well-maintained library |
 | 2025-01-23 | Version 1.0.0 | Semantic versioning from launch |
 | 2025-01-23 | ~15-20 SNPs for free tier | Useful demo, not comprehensive enough to replace paid |
+| 2025-01-25 | Two-step UX with preview | Better user control, allows category selection before extraction |
+| 2025-01-25 | Wellness/Full Report presets | Simple default choices with ability to customize |
