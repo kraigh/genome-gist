@@ -4,14 +4,27 @@
 
 import { parseGenomeFile, formatDisplayName } from './parser';
 import { loadFreeSNPList } from './snp-list';
-import { extractVariants } from './extractor';
+import { extractVariants, estimateMatches } from './extractor';
 import { toYAML, generateFilename, calculateSize } from './output';
-import type { SNPList, ExtractionResult, OutputFormat } from './types';
-import { ParseError } from './types';
+import type {
+  SNPList,
+  ExtractionResult,
+  OutputFormat,
+  ParseResult,
+  SNPCategory,
+  CategoryPreset,
+} from './types';
+import {
+  ParseError,
+  ALL_CATEGORIES,
+  CATEGORY_PRESETS,
+  CATEGORY_LABELS,
+} from './types';
 import { VERSION, TOOL_NAME } from './version';
 
-// localStorage key for format preference
+// localStorage keys
 const FORMAT_STORAGE_KEY = 'genomegist-output-format';
+const PRESET_STORAGE_KEY = 'genomegist-category-preset';
 
 /**
  * Safely get a DOM element by ID with type checking
@@ -30,6 +43,13 @@ const uploadZone = getElement<HTMLDivElement>('upload-zone');
 const fileInput = getElement<HTMLInputElement>('file-input');
 const statusDiv = getElement<HTMLDivElement>('status');
 const statusText = getElement<HTMLParagraphElement>('status-text');
+const previewDiv = getElement<HTMLDivElement>('preview');
+const detectedFormat = getElement<HTMLElement>('detected-format');
+const variantCount = getElement<HTMLElement>('variant-count');
+const estimateCount = getElement<HTMLElement>('estimate-count');
+const categoryCheckboxes = getElement<HTMLDivElement>('category-checkboxes');
+const backBtn = getElement<HTMLButtonElement>('back-btn');
+const extractBtn = getElement<HTMLButtonElement>('extract-btn');
 const resultsDiv = getElement<HTMLDivElement>('results');
 const resultsSummary = getElement<HTMLParagraphElement>('results-summary');
 const downloadBtn = getElement<HTMLButtonElement>('download-btn');
@@ -38,10 +58,13 @@ const errorDiv = getElement<HTMLDivElement>('error');
 const errorText = getElement<HTMLParagraphElement>('error-text');
 
 // State
+let currentParseResult: ParseResult | null = null;
 let currentResult: ExtractionResult | null = null;
 let snpList: SNPList | null = null;
 let currentReader: FileReader | null = null;
 let selectedFormat: OutputFormat = 'detailed';
+let selectedCategories: SNPCategory[] = CATEGORY_PRESETS.wellness;
+let currentPreset: CategoryPreset = 'wellness';
 
 // Initialize
 async function init(): Promise<void> {
@@ -50,6 +73,14 @@ async function init(): Promise<void> {
   if (savedFormat && isValidFormat(savedFormat)) {
     selectedFormat = savedFormat;
     setFormatRadio(savedFormat);
+  }
+
+  // Restore category preset preference
+  const savedPreset = localStorage.getItem(PRESET_STORAGE_KEY);
+  if (savedPreset && isValidPreset(savedPreset)) {
+    currentPreset = savedPreset;
+    selectedCategories = CATEGORY_PRESETS[savedPreset];
+    setPresetRadio(savedPreset);
   }
 
   // Set up format change listeners
@@ -63,6 +94,23 @@ async function init(): Promise<void> {
       }
     });
   });
+
+  // Set up preset change listeners
+  const presetInputs = document.querySelectorAll<HTMLInputElement>('input[name="category-preset"]');
+  presetInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      if (isValidPreset(input.value)) {
+        currentPreset = input.value;
+        selectedCategories = CATEGORY_PRESETS[input.value];
+        localStorage.setItem(PRESET_STORAGE_KEY, currentPreset);
+        updateCategoryCheckboxes();
+        updateEstimate();
+      }
+    });
+  });
+
+  // Generate category checkboxes
+  generateCategoryCheckboxes();
 
   try {
     showStatus('Loading SNP list...');
@@ -79,6 +127,10 @@ function isValidFormat(value: string): value is OutputFormat {
   return value === 'detailed' || value === 'compact' || value === 'minimal';
 }
 
+function isValidPreset(value: string): value is CategoryPreset {
+  return value === 'wellness' || value === 'full';
+}
+
 function setFormatRadio(format: OutputFormat): void {
   const input = document.querySelector<HTMLInputElement>(`input[name="output-format"][value="${format}"]`);
   if (input) {
@@ -86,10 +138,71 @@ function setFormatRadio(format: OutputFormat): void {
   }
 }
 
+function setPresetRadio(preset: CategoryPreset): void {
+  const input = document.querySelector<HTMLInputElement>(`input[name="category-preset"][value="${preset}"]`);
+  if (input) {
+    input.checked = true;
+  }
+}
+
+// Generate category checkboxes dynamically
+function generateCategoryCheckboxes(): void {
+  categoryCheckboxes.innerHTML = '';
+
+  for (const category of ALL_CATEGORIES) {
+    const label = CATEGORY_LABELS[category];
+    const isChecked = selectedCategories.includes(category);
+
+    const wrapper = document.createElement('label');
+    wrapper.className = 'category-checkbox';
+
+    wrapper.innerHTML = `
+      <input type="checkbox" value="${category}" ${isChecked ? 'checked' : ''} />
+      <span class="category-checkbox-label">
+        <span class="category-checkbox-name">${label.name}</span>
+        <span class="category-checkbox-desc">${label.description}</span>
+      </span>
+    `;
+
+    const checkbox = wrapper.querySelector('input');
+    checkbox?.addEventListener('change', handleCategoryCheckboxChange);
+
+    categoryCheckboxes.appendChild(wrapper);
+  }
+}
+
+function handleCategoryCheckboxChange(): void {
+  // Gather all checked categories
+  const checkboxes = categoryCheckboxes.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+  selectedCategories = [];
+
+  checkboxes.forEach((cb) => {
+    if (cb.checked) {
+      selectedCategories.push(cb.value as SNPCategory);
+    }
+  });
+
+  // Clear preset radio (custom selection)
+  const presetInputs = document.querySelectorAll<HTMLInputElement>('input[name="category-preset"]');
+  presetInputs.forEach((input) => {
+    input.checked = false;
+  });
+
+  updateEstimate();
+}
+
+function updateCategoryCheckboxes(): void {
+  const checkboxes = categoryCheckboxes.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+  checkboxes.forEach((cb) => {
+    cb.checked = selectedCategories.includes(cb.value as SNPCategory);
+  });
+}
+
 // UI Helpers
 function showStatus(message: string): void {
   statusDiv.hidden = false;
   statusText.textContent = message;
+  previewDiv.hidden = true;
   resultsDiv.hidden = true;
   errorDiv.hidden = true;
 }
@@ -98,8 +211,33 @@ function hideStatus(): void {
   statusDiv.hidden = true;
 }
 
+function showPreview(parseResult: ParseResult): void {
+  statusDiv.hidden = true;
+  previewDiv.hidden = false;
+  resultsDiv.hidden = true;
+  errorDiv.hidden = true;
+  uploadZone.hidden = true;
+
+  currentParseResult = parseResult;
+
+  // Display format and variant count
+  detectedFormat.textContent = formatDisplayName(parseResult.format);
+  variantCount.textContent = parseResult.variants.length.toLocaleString();
+
+  // Update estimate
+  updateEstimate();
+}
+
+function updateEstimate(): void {
+  if (!currentParseResult || !snpList) return;
+
+  const estimate = estimateMatches(currentParseResult, snpList, selectedCategories);
+  estimateCount.textContent = estimate.total.toString();
+}
+
 function showResults(result: ExtractionResult): void {
   statusDiv.hidden = true;
+  previewDiv.hidden = true;
   resultsDiv.hidden = false;
   errorDiv.hidden = true;
 
@@ -135,9 +273,21 @@ function updateOutputPreview(): void {
 
 function showError(message: string): void {
   statusDiv.hidden = true;
+  previewDiv.hidden = true;
   resultsDiv.hidden = true;
   errorDiv.hidden = false;
   errorText.textContent = message;
+}
+
+function resetToUpload(): void {
+  currentParseResult = null;
+  currentResult = null;
+
+  statusDiv.hidden = true;
+  previewDiv.hidden = true;
+  resultsDiv.hidden = true;
+  errorDiv.hidden = true;
+  uploadZone.hidden = false;
 }
 
 // File handling
@@ -184,7 +334,7 @@ function handleFile(file: File): void {
       return;
     }
 
-    processGenomeFile(content);
+    parseAndShowPreview(content);
   };
 
   reader.onerror = () => {
@@ -194,28 +344,19 @@ function handleFile(file: File): void {
   reader.readAsText(file);
 }
 
-// Process genome file
-function processGenomeFile(content: string): void {
+// Parse genome file and show preview (Step 1)
+function parseAndShowPreview(content: string): void {
   if (!snpList) {
     showError('SNP list not loaded. Please refresh the page.');
     return;
   }
 
   try {
-    // Parse the genome file
     showStatus('Parsing genome file...');
     const parseResult = parseGenomeFile(content);
 
-    showStatus(
-      `Parsed ${parseResult.variants.length.toLocaleString()} variants. Matching against SNP list...`
-    );
-
-    // Extract matching variants
-    const extractionResult = extractVariants(parseResult, snpList);
-
-    // Show results (YAML generation happens on demand)
-    showStatus('Processing complete.');
-    showResults(extractionResult);
+    // Show preview instead of immediately extracting
+    showPreview(parseResult);
   } catch (err) {
     // Handle parse errors
     if (err instanceof ParseError) {
@@ -230,6 +371,32 @@ function processGenomeFile(content: string): void {
       showError('An unexpected error occurred. Please try again.');
     }
     console.error('Processing error:', err);
+  }
+}
+
+// Perform extraction with selected categories (Step 2)
+function performExtraction(): void {
+  if (!currentParseResult || !snpList) {
+    showError('No file loaded. Please upload a genome file first.');
+    return;
+  }
+
+  try {
+    showStatus('Extracting variants...');
+
+    // Extract matching variants with category filter
+    const extractionResult = extractVariants(currentParseResult, snpList, selectedCategories);
+
+    // Show results
+    showStatus('Processing complete.');
+    showResults(extractionResult);
+  } catch (err) {
+    if (err instanceof Error) {
+      showError(err.message || 'Failed to extract variants.');
+    } else {
+      showError('An unexpected error occurred. Please try again.');
+    }
+    console.error('Extraction error:', err);
   }
 }
 
@@ -286,6 +453,11 @@ uploadZone.addEventListener('drop', (e) => {
   }
 });
 
+// Preview action buttons
+backBtn.addEventListener('click', resetToUpload);
+extractBtn.addEventListener('click', performExtraction);
+
+// Download button
 downloadBtn.addEventListener('click', downloadResults);
 
 // Prevent default drag behavior on document

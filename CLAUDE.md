@@ -68,9 +68,70 @@ Token format: `gg_<24-char-random>` (e.g., `gg_a1b2c3d4e5f6g7h8i9j0k1l2`)
 
 1. User enters token in input field
 2. Call `/api/validate-token` with the token
-3. On success: store token in localStorage, use returned `snpList` for extraction
+3. On success: decrypt the SNP list (see below), store token in localStorage
 4. On failure: show appropriate error ("Invalid token" or "Token exhausted")
 5. Display `usesRemaining` to user after successful validation
+6. Use decrypted SNP list for extraction
+
+## SNP List Decryption
+
+The paid SNP list is returned encrypted to prevent casual theft from browser dev tools. The encryption key is derived from the token itself, so no hardcoded keys are needed.
+
+**Encryption scheme:**
+- Algorithm: AES-256-GCM
+- Key: `SHA-256(token)` → 256-bit key
+- IV: Random 12 bytes, included in response as base64
+
+**Decryption implementation:**
+```typescript
+async function decryptSnpList(
+  encryptedBase64: string,
+  ivBase64: string,
+  token: string
+): Promise<object> {
+  // Derive key from token (same as server)
+  const encoder = new TextEncoder();
+  const tokenBytes = encoder.encode(token);
+  const keyMaterial = await crypto.subtle.digest('SHA-256', tokenBytes);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyMaterial,
+    { name: 'AES-GCM' },
+    false,
+    ['decrypt']
+  );
+
+  // Decode base64
+  const encrypted = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+  const iv = Uint8Array.from(atob(ivBase64), c => c.charCodeAt(0));
+
+  // Decrypt
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encrypted
+  );
+
+  return JSON.parse(new TextDecoder().decode(decrypted));
+}
+```
+
+**Usage:**
+```typescript
+const response = await fetch('/api/validate-token', { ... });
+const data = await response.json();
+
+if (data.valid) {
+  const snpList = await decryptSnpList(data.encryptedSnpList, data.iv, token);
+  // Use snpList for extraction...
+}
+```
+
+**Why this approach:**
+- Prevents copy/paste from Network tab
+- No hardcoded keys in frontend source
+- Uses native Web Crypto API (no dependencies)
+- Each response encrypted with user's unique token
 
 ## Critical Constraints
 
@@ -109,3 +170,4 @@ The SNP list (from the pipeline repo) defines what fields are available for each
 |------|----------|-----------|
 | 2025-01-23 | Token format: `gg_<random>` | Opaque tokens stored in backend KV, supports use-counting and revocation |
 | 2025-01-23 | API at api.genomegist.com | Separate subdomain for Worker API |
+| 2025-01-25 | Token-derived encryption for SNP list | Prevents casual theft from dev tools; decrypt using SHA-256(token) as AES-GCM key |
