@@ -69,6 +69,79 @@ export type SNPCategory =
   | 'other';
 
 /**
+ * All available categories as an array
+ */
+export const ALL_CATEGORIES: SNPCategory[] = [
+  'methylation',
+  'detoxification',
+  'cardiovascular',
+  'pharmacogenomics',
+  'neurotransmitters',
+  'immune',
+  'nutrition',
+  'other',
+];
+
+/**
+ * Category preset options
+ */
+export type CategoryPreset = 'wellness' | 'full';
+
+/**
+ * Preset definitions mapping preset names to included categories
+ */
+export const CATEGORY_PRESETS: Record<CategoryPreset, SNPCategory[]> = {
+  wellness: ['methylation', 'nutrition', 'neurotransmitters', 'detoxification'],
+  full: ALL_CATEGORIES,
+};
+
+/**
+ * Human-readable labels and descriptions for each category
+ */
+export const CATEGORY_LABELS: Record<SNPCategory, { name: string; description: string }> = {
+  methylation: {
+    name: 'Methylation',
+    description: 'Folate metabolism, MTHFR variants',
+  },
+  nutrition: {
+    name: 'Nutrition',
+    description: 'Vitamin metabolism, lactose tolerance, obesity risk',
+  },
+  neurotransmitters: {
+    name: 'Neurotransmitters',
+    description: 'Dopamine, serotonin, and mood-related variants',
+  },
+  detoxification: {
+    name: 'Detoxification',
+    description: 'Liver enzyme and toxin clearance',
+  },
+  pharmacogenomics: {
+    name: 'Drug Response',
+    description: 'How you metabolize medications (CYP enzymes)',
+  },
+  cardiovascular: {
+    name: 'Cardiovascular',
+    description: 'Heart health markers including APOE',
+  },
+  immune: {
+    name: 'Immune',
+    description: 'Immune system and inflammation markers',
+  },
+  other: {
+    name: 'Other',
+    description: 'Additional wellness-relevant variants',
+  },
+};
+
+/**
+ * Estimate of matches by category (for preview)
+ */
+export interface CategoryMatchEstimate {
+  total: number;
+  byCategory: Record<SNPCategory, number>;
+}
+
+/**
  * A single entry in the SNP list
  */
 export interface SNPEntry {
@@ -130,6 +203,7 @@ export interface ExtractionMetadata {
   sourceVariantCount: number; // Total variants in genome file
   snpListVersion: string;
   disclaimer: string;
+  categoriesIncluded?: SNPCategory[]; // Categories that were extracted (if filtered)
 }
 
 /**

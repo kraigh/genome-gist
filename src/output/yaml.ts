@@ -17,6 +17,7 @@ interface DetailedOutput {
     source_format: string;
     source_variant_count: number;
     snp_list_version: string;
+    categories_included?: SNPCategory[];
     disclaimer: string;
   };
   summary: {
@@ -95,6 +96,7 @@ function toDetailedYAML(result: ExtractionResult): string {
       source_format: result.metadata.sourceFormat,
       source_variant_count: result.metadata.sourceVariantCount,
       snp_list_version: result.metadata.snpListVersion,
+      categories_included: result.metadata.categoriesIncluded,
       disclaimer: result.metadata.disclaimer,
     },
     summary: {

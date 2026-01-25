@@ -42,13 +42,15 @@ Token format: `gg_<24-char-random>` (e.g., `gg_a1b2c3d4e5f6g7h8i9j0k1l2`)
 
 **Response (success):**
 ```json
-{ "valid": true, "usesRemaining": 2, "snpList": { ... } }
+{ "valid": true, "usesRemaining": 2, "encryptedSnpList": "<base64>", "iv": "<base64>" }
 ```
 
 **Response (invalid/exhausted):**
 ```json
 { "valid": false, "error": "invalid_token" | "exhausted" }
 ```
+
+**Note:** The SNP list is encrypted. See "SNP List Decryption" section below.
 
 ### POST /api/recover-token
 

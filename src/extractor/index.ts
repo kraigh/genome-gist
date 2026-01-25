@@ -2,4 +2,4 @@
  * Extractor module - main entry point
  */
 
-export { extractVariants } from './matcher';
+export { extractVariants, estimateMatches } from './matcher';
