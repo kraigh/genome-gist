@@ -595,9 +595,14 @@ footer {
 }
 
 footer p {
-  margin: 0;
+  margin: 0 0 var(--spacing-xs);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+footer .attribution {
+  font-size: var(--font-size-xs);
+  margin: 0;
 }
 
 footer a {
