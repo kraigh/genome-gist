@@ -22,8 +22,12 @@ export function parseGenomeFile(content: string): ParseResult {
   switch (format) {
     case '23andme-v5':
     case '23andme-v4':
-    case '23andme-v3':
-      return parse23andMe(content);
+    case '23andme-v3': {
+      const result = parse23andMe(content);
+      // Use the detected format, not the hardcoded one from the parser
+      result.format = format;
+      return result;
+    }
 
     case 'ancestry':
       throw createUnsupportedFormatError('AncestryDNA support coming soon.');

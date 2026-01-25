@@ -131,11 +131,11 @@
 - [ ] Clear token option
 
 ### 2.2 API Integration
-- [ ] Create validate-token API endpoint (separate repo/service)
+- [x] Create validate-token API endpoint (in genome-gist-infra repo)
 - [ ] Implement client-side token validation call
-- [ ] Fetch full SNP list on valid token
-- [ ] Handle API errors gracefully (document error handling strategy for API error types)
-- [ ] Implement basic obfuscation for SNP list in memory
+- [ ] Implement SNP list decryption (AES-256-GCM, key = SHA-256(token), see CLAUDE.md)
+- [ ] Handle API errors gracefully (invalid_token, exhausted, network errors)
+- [ ] Keep decrypted SNP list in closure/private scope (not global)
 
 ### 2.3 Stripe Integration
 - [ ] Set up Stripe Checkout for token purchase
@@ -143,17 +143,12 @@
 - [ ] Create cancel page
 - [ ] Implement webhook for payment confirmation
 
-### 2.4 Token Backend
-- [ ] Choose database (Cloudflare D1, PlanetScale, etc.)
-- [ ] Implement token generation (on payment)
-- [ ] Implement token validation endpoint
-- [ ] Implement uses tracking (decrement on each use)
-- [ ] Implement token recovery endpoint
-
-### 2.5 Email
-- [ ] Set up transactional email service
-- [ ] Send token on purchase
-- [ ] Token recovery email flow
+### 2.4 Token Backend (handled in genome-gist-infra repo)
+- [x] Cloudflare KV for token storage
+- [x] Token generation on Stripe payment
+- [x] Token validation endpoint with use-counting
+- [x] Token recovery endpoint
+- [x] Email via Resend (purchase confirmation + recovery)
 
 ---
 
@@ -203,3 +198,4 @@
 | 2025-01-23 | ~15-20 SNPs for free tier | Useful demo, not comprehensive enough to replace paid |
 | 2025-01-25 | Two-step UX with preview | Better user control, allows category selection before extraction |
 | 2025-01-25 | Wellness/Full Report presets | Simple default choices with ability to customize |
+| 2025-01-25 | SNP list encrypted in API response | Decrypt with SHA-256(token) as AES-GCM key; prevents casual dev tools theft |

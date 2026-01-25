@@ -38,11 +38,15 @@ function getElement<T extends HTMLElement>(id: string): T {
   return el as T;
 }
 
-// DOM elements (with null checks)
+// DOM elements - Upload section
 const uploadZone = getElement<HTMLDivElement>('upload-zone');
 const fileInput = getElement<HTMLInputElement>('file-input');
+
+// DOM elements - Status section
 const statusDiv = getElement<HTMLDivElement>('status');
 const statusText = getElement<HTMLParagraphElement>('status-text');
+
+// DOM elements - Preview section
 const previewDiv = getElement<HTMLDivElement>('preview');
 const detectedFormat = getElement<HTMLElement>('detected-format');
 const variantCount = getElement<HTMLElement>('variant-count');
@@ -50,12 +54,19 @@ const estimateCount = getElement<HTMLElement>('estimate-count');
 const categoryCheckboxes = getElement<HTMLDivElement>('category-checkboxes');
 const backBtn = getElement<HTMLButtonElement>('back-btn');
 const extractBtn = getElement<HTMLButtonElement>('extract-btn');
+
+// DOM elements - Results section
 const resultsDiv = getElement<HTMLDivElement>('results');
 const resultsSummary = getElement<HTMLParagraphElement>('results-summary');
 const downloadBtn = getElement<HTMLButtonElement>('download-btn');
 const fileSizeSpan = getElement<HTMLSpanElement>('file-size');
+
+// DOM elements - Error section
 const errorDiv = getElement<HTMLDivElement>('error');
 const errorText = getElement<HTMLParagraphElement>('error-text');
+
+// DOM elements - Footer
+const versionText = getElement<HTMLSpanElement>('version-text');
 
 // State
 let currentParseResult: ParseResult | null = null;
@@ -68,6 +79,9 @@ let currentPreset: CategoryPreset = 'wellness';
 
 // Initialize
 async function init(): Promise<void> {
+  // Set version in footer
+  versionText.textContent = `${TOOL_NAME} v${VERSION}`;
+
   // Restore format preference
   const savedFormat = localStorage.getItem(FORMAT_STORAGE_KEY);
   if (savedFormat && isValidFormat(savedFormat)) {
@@ -116,7 +130,9 @@ async function init(): Promise<void> {
     showStatus('Loading SNP list...');
     snpList = await loadFreeSNPList();
     hideStatus();
-    console.log(`${TOOL_NAME} v${VERSION} loaded. SNP list v${snpList.version} with ${snpList.count} variants.`);
+    if (import.meta.env.DEV) {
+      console.log(`${TOOL_NAME} v${VERSION} loaded. SNP list v${snpList.version} with ${snpList.count} variants.`);
+    }
   } catch (err) {
     showError('Failed to load SNP list. Please refresh the page.');
     console.error('Failed to load SNP list:', err);
@@ -145,28 +161,38 @@ function setPresetRadio(preset: CategoryPreset): void {
   }
 }
 
-// Generate category checkboxes dynamically
+// Generate category checkboxes dynamically using DOM APIs (safer than innerHTML)
 function generateCategoryCheckboxes(): void {
   categoryCheckboxes.innerHTML = '';
 
   for (const category of ALL_CATEGORIES) {
-    const label = CATEGORY_LABELS[category];
+    const labelInfo = CATEGORY_LABELS[category];
     const isChecked = selectedCategories.includes(category);
 
     const wrapper = document.createElement('label');
     wrapper.className = 'category-checkbox';
 
-    wrapper.innerHTML = `
-      <input type="checkbox" value="${category}" ${isChecked ? 'checked' : ''} />
-      <span class="category-checkbox-label">
-        <span class="category-checkbox-name">${label.name}</span>
-        <span class="category-checkbox-desc">${label.description}</span>
-      </span>
-    `;
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = category;
+    checkbox.checked = isChecked;
+    checkbox.addEventListener('change', handleCategoryCheckboxChange);
 
-    const checkbox = wrapper.querySelector('input');
-    checkbox?.addEventListener('change', handleCategoryCheckboxChange);
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'category-checkbox-label';
 
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'category-checkbox-name';
+    nameSpan.textContent = labelInfo.name;
+
+    const descSpan = document.createElement('span');
+    descSpan.className = 'category-checkbox-desc';
+    descSpan.textContent = labelInfo.description;
+
+    labelSpan.appendChild(nameSpan);
+    labelSpan.appendChild(descSpan);
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(labelSpan);
     categoryCheckboxes.appendChild(wrapper);
   }
 }
@@ -338,6 +364,8 @@ function handleFile(file: File): void {
   };
 
   reader.onerror = () => {
+    // Ignore if this reader was superseded by a new one
+    if (currentReader !== reader) return;
     showError('Failed to read file. Please try again.');
   };
 
@@ -408,15 +436,18 @@ function downloadResults(): void {
   const mimeType = selectedFormat === 'minimal' ? 'text/csv' : 'text/yaml';
   const blob = new Blob([output], { type: mimeType });
   const url = URL.createObjectURL(blob);
-  const filename = generateFilename(selectedFormat);
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    const filename = generateFilename(selectedFormat);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 // Event listeners

@@ -74,7 +74,7 @@ export function parse23andMe(content: string): ParseResult {
 
   // Validate we got some data
   if (variants.length === 0) {
-    throw createParseError('No valid variants found in file. Please check the file format.');
+    throw new ParseError('No valid variants found in file. Please check the file format.');
   }
 
   // Build result with optional warnings
@@ -177,11 +177,4 @@ function isValidGenotype(genotype: string): boolean {
   if (/^[DI]{1,2}$/.test(genotype.toUpperCase())) return true;
 
   return false;
-}
-
-/**
- * Create a ParseError
- */
-function createParseError(message: string, line?: number, details?: string): ParseError {
-  return new ParseError(message, line, details);
 }

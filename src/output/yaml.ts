@@ -71,6 +71,13 @@ interface FormattedMissingVariant {
 const COMPACT_DISCLAIMER = 'For research/educational use only. Not medical advice.';
 
 /**
+ * Extract date portion from ISO date string (safer than split)
+ */
+function formatDateOnly(isoDate: string): string {
+  return isoDate.slice(0, 10); // "2025-01-23T..." -> "2025-01-23"
+}
+
+/**
  * Convert extraction result to output string
  */
 export function toYAML(result: ExtractionResult, format: OutputFormat = 'detailed'): string {
@@ -146,7 +153,7 @@ function toCompactYAML(result: ExtractionResult): string {
     metadata: {
       tool: result.metadata.tool,
       version: result.metadata.version,
-      date: result.metadata.date.split('T')[0] ?? result.metadata.date,
+      date: formatDateOnly(result.metadata.date),
       format: result.metadata.sourceFormat,
       disclaimer: COMPACT_DISCLAIMER,
     },
@@ -174,7 +181,7 @@ function toCompactYAML(result: ExtractionResult): string {
  */
 function toMinimalCSV(result: ExtractionResult): string {
   const lines: string[] = [
-    `# ${result.metadata.tool} v${result.metadata.version} | ${result.metadata.date.split('T')[0]} | ${COMPACT_DISCLAIMER}`,
+    `# ${result.metadata.tool} v${result.metadata.version} | ${formatDateOnly(result.metadata.date)} | ${COMPACT_DISCLAIMER}`,
     '# rsid,gene,genotype',
   ];
 
@@ -193,7 +200,7 @@ function toMinimalCSV(result: ExtractionResult): string {
  * Generate filename for download
  */
 export function generateFilename(format: OutputFormat = 'detailed'): string {
-  const date = new Date().toISOString().split('T')[0];
+  const date = formatDateOnly(new Date().toISOString());
   const ext = format === 'minimal' ? 'csv' : 'yaml';
   const suffix = format === 'detailed' ? '' : `-${format}`;
   return `genomegist-results${suffix}-${date}.${ext}`;

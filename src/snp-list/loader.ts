@@ -69,6 +69,18 @@ function validateSNPList(data: unknown): SNPList {
   };
 }
 
+// Valid category values
+const VALID_CATEGORIES = [
+  'methylation',
+  'detoxification',
+  'cardiovascular',
+  'pharmacogenomics',
+  'neurotransmitters',
+  'immune',
+  'nutrition',
+  'other',
+];
+
 /**
  * Validate a single SNP entry
  */
@@ -91,11 +103,21 @@ function validateSNPEntry(entry: unknown): asserts entry is SNPEntry {
     throw new Error(`Invalid SNP entry: missing category for ${obj.rsid}`);
   }
 
+  // Validate category is a known value
+  if (!VALID_CATEGORIES.includes(obj.category)) {
+    throw new Error(`Invalid SNP entry: unknown category "${obj.category}" for ${obj.rsid}`);
+  }
+
   if (typeof obj.annotation !== 'string') {
     throw new Error(`Invalid SNP entry: missing annotation for ${obj.rsid}`);
   }
 
   if (!Array.isArray(obj.sources)) {
     throw new Error(`Invalid SNP entry: missing sources for ${obj.rsid}`);
+  }
+
+  // Validate sources are all strings
+  if (!obj.sources.every((s) => typeof s === 'string')) {
+    throw new Error(`Invalid SNP entry: sources must be array of strings for ${obj.rsid}`);
   }
 }

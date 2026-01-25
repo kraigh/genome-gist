@@ -110,14 +110,90 @@ describe('toYAML', () => {
   });
 });
 
+describe('toYAML compact format', () => {
+  it('generates smaller output than detailed', () => {
+    const detailed = toYAML(mockResult, 'detailed');
+    const compact = toYAML(mockResult, 'compact');
+    expect(compact.length).toBeLessThan(detailed.length);
+  });
+
+  it('includes metadata with shortened fields', () => {
+    const yaml = toYAML(mockResult, 'compact');
+    expect(yaml).toContain('metadata:');
+    expect(yaml).toContain('tool: GenomeGist');
+    expect(yaml).toMatch(/date: ['"]?2025-01-23['"]?/);
+  });
+
+  it('includes variants with only rsid, gene, genotype', () => {
+    const yaml = toYAML(mockResult, 'compact');
+    expect(yaml).toContain('rsid: rs1801133');
+    expect(yaml).toContain('gene: MTHFR');
+    expect(yaml).toContain('genotype: CT');
+    // Should NOT include annotation or category in compact format
+    expect(yaml).not.toContain('annotation:');
+    expect(yaml).not.toContain('category:');
+  });
+
+  it('lists missing variants as rsid only', () => {
+    const yaml = toYAML(mockResult, 'compact');
+    expect(yaml).toContain('missing:');
+    expect(yaml).toContain('rs777777');
+  });
+
+  it('includes compact disclaimer', () => {
+    const yaml = toYAML(mockResult, 'compact');
+    expect(yaml).toContain('For research/educational use only');
+  });
+});
+
+describe('toYAML minimal format', () => {
+  it('generates CSV-style output', () => {
+    const csv = toYAML(mockResult, 'minimal');
+    expect(csv).toContain('# rsid,gene,genotype');
+    expect(csv).toContain('rs1801133,MTHFR,CT');
+    expect(csv).toContain('rs4680,COMT,--');
+  });
+
+  it('generates smallest output', () => {
+    const detailed = toYAML(mockResult, 'detailed');
+    const compact = toYAML(mockResult, 'compact');
+    const minimal = toYAML(mockResult, 'minimal');
+    expect(minimal.length).toBeLessThan(compact.length);
+    expect(minimal.length).toBeLessThan(detailed.length);
+  });
+
+  it('includes header comment with tool info', () => {
+    const csv = toYAML(mockResult, 'minimal');
+    expect(csv).toContain('# GenomeGist v1.0.0');
+    expect(csv).toContain('2025-01-23');
+  });
+
+  it('lists missing variants in comment', () => {
+    const csv = toYAML(mockResult, 'minimal');
+    expect(csv).toContain('# missing: rs777777');
+  });
+});
+
 describe('generateFilename', () => {
-  it('generates filename with current date', () => {
-    const filename = generateFilename();
-    const today = new Date().toISOString().split('T')[0];
+  it('generates filename with current date for detailed', () => {
+    const filename = generateFilename('detailed');
+    const today = new Date().toISOString().slice(0, 10);
     expect(filename).toBe(`genomegist-results-${today}.yaml`);
   });
 
-  it('has .yaml extension', () => {
+  it('generates filename with suffix for compact', () => {
+    const filename = generateFilename('compact');
+    const today = new Date().toISOString().slice(0, 10);
+    expect(filename).toBe(`genomegist-results-compact-${today}.yaml`);
+  });
+
+  it('generates .csv extension for minimal', () => {
+    const filename = generateFilename('minimal');
+    const today = new Date().toISOString().slice(0, 10);
+    expect(filename).toBe(`genomegist-results-minimal-${today}.csv`);
+  });
+
+  it('has .yaml extension for detailed', () => {
     const filename = generateFilename();
     expect(filename).toMatch(/\.yaml$/);
   });

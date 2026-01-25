@@ -19,17 +19,33 @@ import { VERSION, TOOL_NAME } from '../version';
 const DISCLAIMER = `DISCLAIMER: This file contains genetic information extracted for research and educational purposes only. This is NOT medical advice. Genetic variants may have different effects depending on other genetic and environmental factors. Consult a healthcare provider or genetic counselor for interpretation of genetic data. The annotations are derived from public databases and may not reflect the most current scientific understanding.`;
 
 /**
+ * Create a lookup map from genome variants for efficient matching
+ * Exported so it can be cached and reused between estimateMatches and extractVariants
+ */
+export function createGenomeLookup(variants: GenomeVariant[]): Map<string, GenomeVariant> {
+  const lookup = new Map<string, GenomeVariant>();
+
+  for (const variant of variants) {
+    lookup.set(variant.rsid.toLowerCase(), variant);
+  }
+
+  return lookup;
+}
+
+/**
  * Extract matching variants from parsed genome data
  * @param parseResult Parsed genome file
  * @param snpList Target SNP list
  * @param categoryFilter Optional array of categories to include (default: all)
+ * @param genomeLookup Optional pre-built lookup map (for performance when called after estimateMatches)
  */
 export function extractVariants(
   parseResult: ParseResult,
   snpList: SNPList,
-  categoryFilter?: SNPCategory[]
+  categoryFilter?: SNPCategory[],
+  genomeLookup?: Map<string, GenomeVariant>
 ): ExtractionResult {
-  const genomeLookup = createGenomeLookup(parseResult.variants);
+  const lookup = genomeLookup ?? createGenomeLookup(parseResult.variants);
 
   // Filter SNP list by categories if specified
   const filteredVariants = categoryFilter
@@ -45,7 +61,7 @@ export function extractVariants(
   // For each SNP in our list, find it in the genome
   for (const snpEntry of filteredVariants) {
     const rsidLower = snpEntry.rsid.toLowerCase();
-    const genomeVariant = genomeLookup.get(rsidLower);
+    const genomeVariant = lookup.get(rsidLower);
 
     if (genomeVariant) {
       const isNoCall = genomeVariant.genotype === '--';
@@ -102,13 +118,15 @@ export function extractVariants(
 /**
  * Estimate matches by category without full extraction
  * Used for preview UI to show expected results
+ * @param genomeLookup Optional pre-built lookup map (for performance)
  */
 export function estimateMatches(
   parseResult: ParseResult,
   snpList: SNPList,
-  categoryFilter?: SNPCategory[]
+  categoryFilter?: SNPCategory[],
+  genomeLookup?: Map<string, GenomeVariant>
 ): CategoryMatchEstimate {
-  const genomeLookup = createGenomeLookup(parseResult.variants);
+  const lookup = genomeLookup ?? createGenomeLookup(parseResult.variants);
   const categories = categoryFilter ?? ALL_CATEGORIES;
 
   // Initialize counts for all categories
@@ -130,24 +148,11 @@ export function estimateMatches(
     }
 
     const rsidLower = snpEntry.rsid.toLowerCase();
-    if (genomeLookup.has(rsidLower)) {
+    if (lookup.has(rsidLower)) {
       byCategory[snpEntry.category]++;
     }
   }
 
   const total = Object.values(byCategory).reduce((a, b) => a + b, 0);
   return { total, byCategory };
-}
-
-/**
- * Create a lookup map from genome variants for efficient matching
- */
-function createGenomeLookup(variants: GenomeVariant[]): Map<string, GenomeVariant> {
-  const lookup = new Map<string, GenomeVariant>();
-
-  for (const variant of variants) {
-    lookup.set(variant.rsid.toLowerCase(), variant);
-  }
-
-  return lookup;
 }

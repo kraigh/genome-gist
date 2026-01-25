@@ -2,4 +2,4 @@
  * Extractor module - main entry point
  */
 
-export { extractVariants, estimateMatches } from './matcher';
+export { extractVariants, estimateMatches, createGenomeLookup } from './matcher';
