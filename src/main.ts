@@ -19,12 +19,17 @@ import {
   ALL_CATEGORIES,
   CATEGORY_PRESETS,
   CATEGORY_LABELS,
+  PRESET_REQUIRES_TOKEN,
 } from './types';
 import { VERSION, TOOL_NAME } from './version';
 
 // localStorage keys
 const FORMAT_STORAGE_KEY = 'genomegist-output-format';
 const PRESET_STORAGE_KEY = 'genomegist-category-preset';
+const TOKEN_STORAGE_KEY = 'genomegist-token';
+
+// API configuration
+const API_BASE_URL = 'https://api.genomegist.com';
 
 /**
  * Safely get a DOM element by ID with type checking
@@ -55,6 +60,16 @@ const categoryCheckboxes = getElement<HTMLDivElement>('category-checkboxes');
 const backBtn = getElement<HTMLButtonElement>('back-btn');
 const extractBtn = getElement<HTMLButtonElement>('extract-btn');
 
+// DOM elements - Token section
+const tokenSection = getElement<HTMLDivElement>('token-section');
+const tokenInput = getElement<HTMLInputElement>('token-input');
+const tokenValidateBtn = getElement<HTMLButtonElement>('token-validate-btn');
+const tokenStatus = getElement<HTMLDivElement>('token-status');
+const tokenActive = getElement<HTMLDivElement>('token-active');
+const sessionInfo = getElement<HTMLSpanElement>('session-info');
+const tokenClearBtn = getElement<HTMLButtonElement>('token-clear-btn');
+const purchaseLink = getElement<HTMLAnchorElement>('purchase-link');
+
 // DOM elements - Results section
 const resultsDiv = getElement<HTMLDivElement>('results');
 const resultsSummary = getElement<HTMLParagraphElement>('results-summary');
@@ -72,15 +87,27 @@ const versionText = getElement<HTMLSpanElement>('version-text');
 let currentParseResult: ParseResult | null = null;
 let currentResult: ExtractionResult | null = null;
 let snpList: SNPList | null = null;
+let paidSnpList: SNPList | null = null; // Decrypted paid SNP list (kept in closure)
 let currentReader: FileReader | null = null;
 let selectedFormat: OutputFormat = 'detailed';
-let selectedCategories: SNPCategory[] = CATEGORY_PRESETS.wellness;
-let currentPreset: CategoryPreset = 'wellness';
+let selectedCategories: SNPCategory[] = CATEGORY_PRESETS.demo;
+let currentPreset: CategoryPreset = 'demo';
+let storedToken: string | null = null;
+let sessionsRemaining: number | null = null;
+let sessionExpiresAt: Date | null = null;
 
 // Initialize
 async function init(): Promise<void> {
   // Set version in footer
   versionText.textContent = `${TOOL_NAME} v${VERSION}`;
+
+  // Restore token from localStorage
+  const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+  if (savedToken) {
+    storedToken = savedToken;
+    // We'll validate token on next API call; for now just show as active
+    updateTokenUI();
+  }
 
   // Restore format preference
   const savedFormat = localStorage.getItem(FORMAT_STORAGE_KEY);
@@ -89,12 +116,19 @@ async function init(): Promise<void> {
     setFormatRadio(savedFormat);
   }
 
-  // Restore category preset preference
+  // Restore category preset preference (but validate token requirement)
   const savedPreset = localStorage.getItem(PRESET_STORAGE_KEY);
   if (savedPreset && isValidPreset(savedPreset)) {
-    currentPreset = savedPreset;
-    selectedCategories = CATEGORY_PRESETS[savedPreset];
-    setPresetRadio(savedPreset);
+    // If saved preset requires token but no token stored, fall back to demo
+    if (PRESET_REQUIRES_TOKEN[savedPreset] && !storedToken) {
+      currentPreset = 'demo';
+      selectedCategories = CATEGORY_PRESETS.demo;
+      setPresetRadio('demo');
+    } else {
+      currentPreset = savedPreset;
+      selectedCategories = CATEGORY_PRESETS[savedPreset];
+      setPresetRadio(savedPreset);
+    }
   }
 
   // Set up format change listeners
@@ -114,17 +148,26 @@ async function init(): Promise<void> {
   presetInputs.forEach((input) => {
     input.addEventListener('change', () => {
       if (isValidPreset(input.value)) {
-        currentPreset = input.value;
-        selectedCategories = CATEGORY_PRESETS[input.value];
-        localStorage.setItem(PRESET_STORAGE_KEY, currentPreset);
-        updateCategoryCheckboxes();
-        updateEstimate();
+        handlePresetChange(input.value);
       }
     });
   });
 
+  // Set up token event listeners
+  tokenValidateBtn.addEventListener('click', handleTokenValidation);
+  tokenInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      handleTokenValidation();
+    }
+  });
+  tokenClearBtn.addEventListener('click', clearToken);
+  purchaseLink.addEventListener('click', handlePurchaseClick);
+
   // Generate category checkboxes
   generateCategoryCheckboxes();
+
+  // Update token section visibility based on initial preset
+  updateTokenSectionVisibility();
 
   try {
     showStatus('Loading SNP list...');
@@ -139,12 +182,184 @@ async function init(): Promise<void> {
   }
 }
 
+// Handle preset selection changes
+function handlePresetChange(preset: CategoryPreset): void {
+  const requiresToken = PRESET_REQUIRES_TOKEN[preset];
+
+  // If requires token and no valid token, show token section
+  if (requiresToken && !storedToken) {
+    // Still update the preset selection visually
+    currentPreset = preset;
+    selectedCategories = CATEGORY_PRESETS[preset];
+    localStorage.setItem(PRESET_STORAGE_KEY, currentPreset);
+    updateCategoryCheckboxes();
+    updateTokenSectionVisibility();
+    // Don't update estimate yet - they need to enter a token
+    // Show estimate based on what they'd get with the paid tier
+    updateEstimate();
+    return;
+  }
+
+  currentPreset = preset;
+  selectedCategories = CATEGORY_PRESETS[preset];
+  localStorage.setItem(PRESET_STORAGE_KEY, currentPreset);
+  updateCategoryCheckboxes();
+  updateTokenSectionVisibility();
+  updateEstimate();
+}
+
+// Update token section visibility based on current state
+function updateTokenSectionVisibility(): void {
+  const requiresToken = PRESET_REQUIRES_TOKEN[currentPreset];
+
+  if (storedToken && paidSnpList) {
+    // Token is stored and SNP list cached - show active badge, hide input
+    tokenSection.hidden = true;
+    tokenActive.hidden = false;
+
+    // Show session expiry info
+    if (sessionExpiresAt) {
+      const now = new Date();
+      if (sessionExpiresAt > now) {
+        const hoursLeft = Math.ceil((sessionExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
+        sessionInfo.textContent = `· Unlimited exports for ${hoursLeft}h`;
+      } else {
+        sessionInfo.textContent = '· Session expired';
+      }
+    } else if (sessionsRemaining !== null) {
+      sessionInfo.textContent = `· ${sessionsRemaining} sessions remaining`;
+    } else {
+      sessionInfo.textContent = '';
+    }
+  } else if (storedToken) {
+    // Token stored but no SNP list yet - show active badge
+    tokenSection.hidden = true;
+    tokenActive.hidden = false;
+    sessionInfo.textContent = sessionsRemaining !== null ? `· ${sessionsRemaining} sessions remaining` : '';
+  } else if (requiresToken) {
+    // Paid tier selected but no token - show input section
+    tokenSection.hidden = false;
+    tokenActive.hidden = true;
+  } else {
+    // Free tier - hide both
+    tokenSection.hidden = true;
+    tokenActive.hidden = true;
+  }
+}
+
+// Update token UI state
+function updateTokenUI(): void {
+  updateTokenSectionVisibility();
+}
+
+// Handle token validation
+async function handleTokenValidation(): Promise<void> {
+  const token = tokenInput.value.trim();
+
+  if (!token) {
+    showTokenStatus('Please enter a token.', 'error');
+    return;
+  }
+
+  // Validate token format
+  if (!token.startsWith('gg_') || token.length < 10) {
+    showTokenStatus('Invalid token format. Tokens start with "gg_".', 'error');
+    return;
+  }
+
+  showTokenStatus('Validating token...', 'loading');
+  tokenValidateBtn.disabled = true;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+
+    const data = await response.json();
+
+    if (data.valid) {
+      // Store token
+      storedToken = token;
+      sessionsRemaining = data.sessionsRemaining ?? data.usesRemaining ?? null;
+      sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt) : null;
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+
+      // TODO: Decrypt and store the paid SNP list
+      // paidSnpList = await decryptSnpList(data.encryptedSnpList, data.iv, token);
+
+      const sessionMsg = sessionExpiresAt
+        ? 'Session started! Unlimited exports for 24 hours.'
+        : `Token validated! ${sessionsRemaining} sessions remaining.`;
+      showTokenStatus(sessionMsg, 'success');
+
+      // Update UI after short delay to show success message
+      setTimeout(() => {
+        tokenStatus.hidden = true;
+        tokenInput.value = '';
+        updateTokenUI();
+        updateEstimate();
+      }, 1500);
+    } else {
+      const errorMsg = data.error === 'exhausted'
+        ? 'This token has no remaining sessions.'
+        : 'Invalid token. Please check and try again.';
+      showTokenStatus(errorMsg, 'error');
+    }
+  } catch (err) {
+    console.error('Token validation error:', err);
+    showTokenStatus('Network error. Please try again.', 'error');
+  } finally {
+    tokenValidateBtn.disabled = false;
+  }
+}
+
+// Show token status message
+function showTokenStatus(message: string, type: 'success' | 'error' | 'loading'): void {
+  tokenStatus.hidden = false;
+  tokenStatus.textContent = message;
+  tokenStatus.className = `token-status token-status-${type}`;
+}
+
+// Clear stored token
+function clearToken(): void {
+  storedToken = null;
+  sessionsRemaining = null;
+  sessionExpiresAt = null;
+  paidSnpList = null;
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+
+  // If currently on a paid preset, switch to demo
+  if (PRESET_REQUIRES_TOKEN[currentPreset]) {
+    currentPreset = 'demo';
+    selectedCategories = CATEGORY_PRESETS.demo;
+    localStorage.setItem(PRESET_STORAGE_KEY, currentPreset);
+    setPresetRadio('demo');
+    updateCategoryCheckboxes();
+  }
+
+  updateTokenUI();
+  updateEstimate();
+}
+
+// Handle purchase link click
+function handlePurchaseClick(e: Event): void {
+  e.preventDefault();
+  // TODO: Redirect to Stripe Checkout
+  // For now, just show coming soon message
+  showTokenStatus('Full Access purchase coming soon!', 'loading');
+  setTimeout(() => {
+    tokenStatus.hidden = true;
+  }, 2000);
+}
+
 function isValidFormat(value: string): value is OutputFormat {
   return value === 'detailed' || value === 'compact' || value === 'minimal';
 }
 
 function isValidPreset(value: string): value is CategoryPreset {
-  return value === 'wellness' || value === 'full';
+  return value === 'demo' || value === 'wellness' || value === 'full';
 }
 
 function setFormatRadio(format: OutputFormat): void {
@@ -250,7 +465,8 @@ function showPreview(parseResult: ParseResult): void {
   detectedFormat.textContent = formatDisplayName(parseResult.format);
   variantCount.textContent = parseResult.variants.length.toLocaleString();
 
-  // Update estimate
+  // Update token section visibility and estimate
+  updateTokenSectionVisibility();
   updateEstimate();
 }
 
@@ -409,11 +625,22 @@ function performExtraction(): void {
     return;
   }
 
+  // Check if paid tier is selected without a valid token
+  if (PRESET_REQUIRES_TOKEN[currentPreset] && !storedToken) {
+    showError('Please enter a valid token for Full Access reports.');
+    return;
+  }
+
   try {
     showStatus('Extracting variants...');
 
+    // Use paid SNP list if available and paid tier selected, otherwise free list
+    const listToUse = (PRESET_REQUIRES_TOKEN[currentPreset] && paidSnpList)
+      ? paidSnpList
+      : snpList;
+
     // Extract matching variants with category filter
-    const extractionResult = extractVariants(currentParseResult, snpList, selectedCategories);
+    const extractionResult = extractVariants(currentParseResult, listToUse, selectedCategories);
 
     // Show results
     showStatus('Processing complete.');

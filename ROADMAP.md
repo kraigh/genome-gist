@@ -129,11 +129,32 @@
 
 ## Phase 2: Paid Tier
 
+### 2.0 Free vs Paid UX Clarity
+- [x] Update "What's Included" section with clear free/paid distinction
+- [x] Add tier comparison (Free Demo ~15 SNPs vs Full Report 1,000+ SNPs)
+- [x] Update preview step to show tier options (Demo, Wellness, Full Report)
+- [x] Make it clear which presets require a token
+- [x] Show estimated variant counts per tier in preview
+- [ ] Add subtle "upgrade" messaging for free tier users
+
+### 2.0.1 Results View UX (Re-extraction Flow)
+- [ ] Keep category selection visible in results view (not just preview)
+- [ ] Keep output format selection visible in results view
+- [ ] Add "Re-extract" button that uses cached SNP list
+- [ ] Show "Session active — unlimited use until [time]" message
+- [x] Rename "Upload different file" → "Process different file"
+- [ ] "Process different file" returns to upload (session continues, can process more files)
+- [x] Update copy throughout: "3 sessions" not "3 uses"
+- [ ] Explain session model: "Each session = 24 hours of unlimited access"
+
 ### 2.1 Token Input UI
-- [ ] Add token input field to UI
-- [ ] Store token in localStorage
-- [ ] Show token status (valid/invalid/none)
-- [ ] Clear token option
+- [x] Add inline token input in preview step (appears when paid tier selected)
+- [x] Token validation with loading state
+- [x] Show validation result (success with uses remaining, or error)
+- [x] Store validated token in localStorage
+- [x] Show "Token active" badge when token is stored
+- [ ] Add "Have a token?" link for users who already purchased
+- [x] Clear token / sign out option
 
 ### 2.2 API Integration
 - [x] Create validate-token API endpoint (in genome-gist-infra repo)
@@ -141,14 +162,40 @@
 - [ ] Implement SNP list decryption (AES-256-GCM, key = SHA-256(token), see CLAUDE.md)
 - [ ] Handle API errors gracefully (invalid_token, exhausted, network errors)
 - [ ] Keep decrypted SNP list in closure/private scope (not global)
+- [ ] Cache decrypted SNP list in memory (persists until page refresh/close)
 
-### 2.3 Stripe Integration
+### 2.2.1 Session-Based Token Model (24-Hour Unlimited Windows)
+**Model:** Each token ($19.99) includes 3 sessions. Each session = 24 hours of unlimited use (multiple files, any settings, unlimited exports).
+
+**Frontend changes:**
+- [ ] Cache paid SNP list in memory; only re-fetch if cache empty or session expired
+- [ ] Show session expiry time after validation ("Session active — unlimited use until [time]")
+- [ ] Update copy: "sessions remaining" terminology throughout
+- [ ] Allow processing multiple files within a session without consuming additional sessions
+- [ ] If session expired, show message and re-fetch SNP list (starts new session)
+- [ ] Clear messaging: "You have 24 hours of unlimited access"
+
+**Backend changes (genome-gist-infra repo):**
+- [ ] Add `lastUsedAt` timestamp to token record in KV
+- [ ] Add session window constant (24 hours = 86400000ms)
+- [ ] On validate-token: if `now - lastUsedAt < 24h`, return SNP list WITHOUT decrementing
+- [ ] On validate-token: if `now - lastUsedAt >= 24h` OR first use, decrement and update `lastUsedAt`
+- [ ] Return `sessionExpiresAt` in response (lastUsedAt + 24h)
+- [ ] Token record structure: `{ sessionsRemaining: number, lastUsedAt: string | null }`
+
+### 2.3 Purchase Flow UI
+- [ ] Add "Get Full Report" CTA button in preview step
+- [ ] Link to Stripe Checkout for token purchase
+- [ ] Create success page that displays token and auto-stores it
+- [ ] Create cancel page with option to continue with free tier
+- [ ] Handle return from Stripe (detect token in URL params)
+
+### 2.4 Stripe Integration (backend)
 - [ ] Set up Stripe Checkout for token purchase
-- [ ] Create success page (displays token)
-- [ ] Create cancel page
 - [ ] Implement webhook for payment confirmation
+- [ ] Generate and email token on successful payment
 
-### 2.4 Token Backend (handled in genome-gist-infra repo)
+### 2.5 Token Backend (handled in genome-gist-infra repo)
 - [x] Cloudflare KV for token storage
 - [x] Token generation on Stripe payment
 - [x] Token validation endpoint with use-counting

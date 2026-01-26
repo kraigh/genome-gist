@@ -23,15 +23,122 @@ The output file should be small (<10MB) so it can be easily uploaded to AI tools
 
 ## Two Tiers
 
-**Free tier:** Uses a short, bundled SNP list for demonstration. No server calls needed.
+**Free tier:** Uses a short, bundled SNP list (~15 SNPs) for demonstration. No server calls needed.
 
-**Paid tier:** User enters a token (purchased via Stripe). Token is validated via API, which returns the proprietary SNP list. Token is valid for ~3 uses.
+**Paid tier ($19.99):** User enters a token (purchased via Stripe). Token is validated via API, which returns the full proprietary SNP list (1,000+ variants). Each token includes 3 sessions, where each session is a 24-hour window of unlimited use.
 
 ## Token API Contract
 
 Base URL: `https://api.genomegist.com`
 
 Token format: `gg_<24-char-random>` (e.g., `gg_a1b2c3d4e5f6g7h8i9j0k1l2`)
+
+### Token Session Model
+
+Each token ($19.99) includes **3 analysis sessions**. A session is a 24-hour window of **unlimited use** of the full SNP list.
+
+**How sessions work:**
+- First SNP list fetch starts a session (decrements `sessionsRemaining`, sets `lastUsedAt`)
+- All fetches within 24 hours reuse the same session (no decrement)
+- After 24 hours, next fetch starts a new session (decrements again)
+- This is enforced server-side via `lastUsedAt` timestamp
+
+**What users can do in a session:**
+- Process multiple genome files (self, family members, etc.)
+- Export with any combination of settings (Wellness, Full, different formats)
+- Re-extract as many times as needed
+- Come back within 24 hours even after closing the browser
+
+**Why this model:**
+- Best user experience — no anxiety about "wasting" a use
+- Server-enforced (no client-side bypass possible)
+- Clear mental model: "24 hours of unlimited access"
+- 3 sessions allows coming back months later with new knowledge
+
+### Backend Session Enforcement (Requirements)
+
+**Token Record Structure (Cloudflare KV):**
+```typescript
+interface TokenRecord {
+  sessionsRemaining: number;    // Starts at 3, decrements when new session starts
+  lastSessionStartedAt: string | null;  // ISO 8601 timestamp, null if never used
+  createdAt: string;            // ISO 8601 timestamp
+  email: string;                // For token recovery
+}
+```
+
+**Session Window Constant:**
+```typescript
+const SESSION_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+```
+
+**Validation Logic (pseudocode):**
+```typescript
+function validateToken(token: string): ValidationResult {
+  // 1. Lookup token in KV
+  const record = await KV.get(token);
+
+  if (!record) {
+    return { valid: false, error: 'invalid_token' };
+  }
+
+  const now = Date.now();
+  const lastStart = record.lastSessionStartedAt
+    ? new Date(record.lastSessionStartedAt).getTime()
+    : null;
+
+  // 2. Check if within an active session (last session started < 24 hours ago)
+  const isWithinActiveSession = lastStart && (now - lastStart < SESSION_WINDOW_MS);
+
+  if (isWithinActiveSession) {
+    // ACTIVE SESSION: Return SNP list without decrementing
+    return {
+      valid: true,
+      sessionsRemaining: record.sessionsRemaining,
+      sessionExpiresAt: new Date(lastStart + SESSION_WINDOW_MS).toISOString(),
+      encryptedSnpList: getEncryptedSnpList(token),
+      iv: generateIV()
+    };
+  }
+
+  // 3. No active session — need to start a new one
+  if (record.sessionsRemaining <= 0) {
+    return { valid: false, error: 'exhausted' };
+  }
+
+  // 4. Start new session: decrement counter, update timestamp
+  const newRecord = {
+    ...record,
+    sessionsRemaining: record.sessionsRemaining - 1,
+    lastSessionStartedAt: new Date(now).toISOString()
+  };
+  await KV.put(token, newRecord);
+
+  return {
+    valid: true,
+    sessionsRemaining: newRecord.sessionsRemaining,
+    sessionExpiresAt: new Date(now + SESSION_WINDOW_MS).toISOString(),
+    encryptedSnpList: getEncryptedSnpList(token),
+    iv: generateIV()
+  };
+}
+```
+
+**Key Behaviors:**
+| Scenario | Action | sessionsRemaining |
+|----------|--------|-------------------|
+| First ever use | Start session, decrement | 3 → 2 |
+| Within 24h of last use | Return list, NO decrement | 2 (unchanged) |
+| 25 hours after last use | Start new session, decrement | 2 → 1 |
+| Last session, within 24h | Return list, NO decrement | 0 (unchanged) |
+| Last session expired, 0 remaining | Return error | 0 (exhausted) |
+
+**Edge Cases:**
+- Token used at 2pm Monday → session active until 2pm Tuesday
+- User returns at 1pm Tuesday (23 hours later) → same session, no decrement
+- User returns at 3pm Tuesday (25 hours later) → new session, decrement
+- If `sessionsRemaining` is 0 AND session expired → return `exhausted` error
+- If `sessionsRemaining` is 0 BUT session still active → return SNP list (honor the active session)
 
 ### POST /api/validate-token
 
@@ -40,14 +147,30 @@ Token format: `gg_<24-char-random>` (e.g., `gg_a1b2c3d4e5f6g7h8i9j0k1l2`)
 { "token": "gg_abc123..." }
 ```
 
-**Response (success):**
+**Response (success — new or active session):**
 ```json
-{ "valid": true, "usesRemaining": 2, "encryptedSnpList": "<base64>", "iv": "<base64>" }
+{
+  "valid": true,
+  "sessionsRemaining": 2,
+  "sessionExpiresAt": "2025-01-26T19:00:00Z",
+  "encryptedSnpList": "<base64>",
+  "iv": "<base64>"
+}
 ```
 
-**Response (invalid/exhausted):**
+- `sessionsRemaining`: Sessions left AFTER this one (if new session started) or current count (if reusing active session)
+- `sessionExpiresAt`: When the current session expires (always 24h from session start)
+- `encryptedSnpList`: The paid SNP list, encrypted with the token-derived key
+- `iv`: Random IV for decryption
+
+**Response (invalid token):**
 ```json
-{ "valid": false, "error": "invalid_token" | "exhausted" }
+{ "valid": false, "error": "invalid_token" }
+```
+
+**Response (no sessions remaining and no active session):**
+```json
+{ "valid": false, "error": "exhausted" }
 ```
 
 **Note:** The SNP list is encrypted. See "SNP List Decryption" section below.
@@ -66,12 +189,18 @@ Token format: `gg_<24-char-random>` (e.g., `gg_a1b2c3d4e5f6g7h8i9j0k1l2`)
 
 ### Frontend Token Flow
 
-1. User enters token in input field
-2. Call `/api/validate-token` with the token
-3. On success: decrypt the SNP list (see below), store token in localStorage
-4. On failure: show appropriate error ("Invalid token" or "Token exhausted")
-5. Display `usesRemaining` to user after successful validation
-6. Use decrypted SNP list for extraction
+1. User selects a paid tier (Wellness or Full Report)
+2. If no cached SNP list, prompt for token
+3. User enters token, clicks Validate
+4. Call `/api/validate-token` with the token
+5. On success:
+   - Decrypt the SNP list (see below)
+   - Cache decrypted list in memory (not localStorage — sensitive data)
+   - Store token in localStorage (for session continuity)
+   - Display session status ("Unlimited access until [sessionExpiresAt]")
+6. On failure: show appropriate error ("Invalid token" or "No sessions remaining")
+7. Use cached SNP list for all extractions within the session
+8. If user returns after session expires, re-call `/api/validate-token` (starts new session if available)
 
 ## SNP List Decryption
 

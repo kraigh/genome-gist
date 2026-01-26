@@ -27,12 +27,18 @@
           <div id="upload-zone" class="upload-zone">
             <div class="upload-icon">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 16.2091 19.2091 18 17 18H16M12 12V21M12 12L15 15M12 12L9 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- File outline -->
+                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M14 2V8H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Gear icon -->
+                <circle cx="12" cy="15" r="2" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M12 11.5V12.5M12 17.5V18.5M14.5 13L13.6 13.6M10.4 16.4L9.5 17M15 15H14M10 15H9M14.5 17L13.6 16.4M10.4 13.6L9.5 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
               </svg>
             </div>
             <p class="upload-text">Drag and drop your genome file here</p>
             <p class="upload-subtext">or click to browse</p>
             <p class="upload-formats">Supports: 23andMe (.txt)</p>
+            <p class="upload-privacy">Your file stays on your device — never uploaded or shared</p>
             <input type="file" id="file-input" accept=".txt,.csv" hidden />
           </div>
 
@@ -59,25 +65,67 @@
             </div>
 
             <div class="category-filter">
-              <label class="filter-label">What would you like to extract?</label>
+              <label class="filter-label">Choose your report</label>
 
               <div class="preset-options">
-                <label class="preset-option">
-                  <input type="radio" name="category-preset" value="wellness" checked />
+                <label class="preset-option" data-tier="free">
+                  <input type="radio" name="category-preset" value="demo" checked />
                   <span class="preset-radio"></span>
                   <span class="preset-content">
-                    <span class="preset-name">Wellness Only</span>
+                    <span class="preset-name">
+                      Free Demo
+                      <span class="preset-badge preset-badge-free">Free</span>
+                    </span>
+                    <span class="preset-desc">~15 common SNPs including MTHFR, APOE, COMT</span>
+                  </span>
+                </label>
+                <label class="preset-option" data-tier="paid">
+                  <input type="radio" name="category-preset" value="wellness" />
+                  <span class="preset-radio"></span>
+                  <span class="preset-content">
+                    <span class="preset-name">
+                      Wellness Report
+                      <span class="preset-badge preset-badge-paid">Full Access</span>
+                    </span>
                     <span class="preset-desc">Nutrition, methylation, neurotransmitters, detox</span>
                   </span>
                 </label>
-                <label class="preset-option">
+                <label class="preset-option" data-tier="paid">
                   <input type="radio" name="category-preset" value="full" />
                   <span class="preset-radio"></span>
                   <span class="preset-content">
-                    <span class="preset-name">Full Report</span>
-                    <span class="preset-desc">Includes drug response and cardiovascular</span>
+                    <span class="preset-name">
+                      Complete Report
+                      <span class="preset-badge preset-badge-paid">Full Access</span>
+                    </span>
+                    <span class="preset-desc">All categories including drug response, cardiovascular, and immune</span>
                   </span>
                 </label>
+              </div>
+
+              <!-- Token input section (shown when paid tier selected without valid token) -->
+              <div id="token-section" class="token-section" hidden>
+                <div class="token-prompt">
+                  <p>Full Access required for this report.</p>
+                  <div class="token-input-row">
+                    <input type="text" id="token-input" class="token-input" placeholder="Enter your token (gg_...)" />
+                    <button id="token-validate-btn" class="btn btn-primary btn-sm">Validate</button>
+                  </div>
+                  <p class="token-hint">
+                    Don't have a token? <a href="#" id="purchase-link">Get Full Access ($19.99)</a>
+                  </p>
+                </div>
+                <div id="token-status" class="token-status" hidden></div>
+              </div>
+
+              <!-- Token active badge (shown when valid token stored) -->
+              <div id="token-active" class="token-active" hidden>
+                <svg class="token-active-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Session active</span>
+                <span id="session-info" class="session-info"></span>
+                <button id="token-clear-btn" class="token-clear-btn">Clear</button>
               </div>
 
               <details class="category-details">
@@ -97,7 +145,7 @@
                 <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Upload Different File
+                Process Different File
               </button>
               <button id="extract-btn" class="btn btn-primary">
                 <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -194,7 +242,7 @@
             <li>Ask about specific variants and what they mean</li>
             <li>Get personalized supplement or nutrition suggestions based on your genetics</li>
             <li>Understand how you might respond to certain medications</li>
-            <li>Explore your ancestry-related genetic markers</li>
+            <li>Learn about your genetic predispositions for various health traits</li>
           </ul>
           <p>
             The compact output format keeps the file small enough to upload without hitting
@@ -204,9 +252,33 @@
 
         <section class="categories-section card">
           <h2>What's Included</h2>
-          <p>
-            We extract variants across several categories. Choose "Wellness Only" for lifestyle
-            optimization, or "Full Report" to include medical and pharmacogenomic markers.
+
+          <div class="tier-comparison">
+            <div class="tier-card tier-free">
+              <div class="tier-badge">Free</div>
+              <h3>Demo Report</h3>
+              <p class="tier-count">~15 variants</p>
+              <p class="tier-desc">
+                A sample of well-known SNPs including MTHFR, APOE, COMT, and a few others.
+                Great for trying out the tool.
+              </p>
+            </div>
+            <div class="tier-card tier-paid">
+              <div class="tier-badge">Full Access</div>
+              <h3>Complete Report</h3>
+              <p class="tier-count">1,000+ variants</p>
+              <p class="tier-desc">
+                Comprehensive coverage across all categories. Process as many files
+                as you like with unlimited exports for 24 hours.
+              </p>
+              <p class="tier-price">$19.99</p>
+            </div>
+          </div>
+
+          <h3 class="categories-heading">Categories in Full Report</h3>
+          <p class="categories-intro">
+            The complete report covers these categories. Select Wellness for lifestyle
+            optimization, or Full Report to include all.
           </p>
 
           <div class="category-grid">
@@ -238,6 +310,10 @@
               <h3>Detoxification</h3>
               <p>Genes involved in clearing toxins and environmental compounds from your body.</p>
             </div>
+            <div class="category-item">
+              <h3>Immune</h3>
+              <p>Immune system function and inflammation markers that may affect health outcomes.</p>
+            </div>
           </div>
         </section>
 
@@ -261,18 +337,17 @@
               application itself and the SNP reference list.
             </p>
             <p>
-              Don't trust us? The source code is
-              <a href="https://github.com/kraigh/genomegist" target="_blank" rel="noopener">publicly available</a>
-              for review. You can audit the code yourself or run it locally.
+              The <a href="https://github.com/kraigh/genomegist" target="_blank" rel="noopener">source code</a>
+              is publicly available for review. You can audit the code yourself or run it locally.
             </p>
           </details>
 
           <details class="faq-item">
             <summary>What AI tools work with the output?</summary>
             <p>
-              The output file works with any AI assistant that accepts file uploads: ChatGPT
-              (with GPT-4), Claude, Google Gemini, and others. The "Compact" format is optimized
-              for AI context limits.
+              The output file works with any AI assistant that accepts file uploads: ChatGPT,
+              Claude, Google Gemini, and others. The "Compact" format is optimized for AI
+              context limits, keeping the file small while retaining essential information.
             </p>
           </details>
 
@@ -288,9 +363,10 @@
           <details class="faq-item">
             <summary>What's the difference between Wellness and Full Report?</summary>
             <p>
-              Wellness Only includes nutrition, methylation, and neurotransmitter variants -
-              useful for lifestyle optimization. Full Report adds pharmacogenomics (drug response)
-              and cardiovascular markers, which have more direct medical implications.
+              Wellness Only includes nutrition, methylation, neurotransmitter, and detoxification
+              variants — useful for lifestyle optimization. Full Report adds pharmacogenomics
+              (drug response), cardiovascular, and immune markers, which have more direct
+              medical implications.
             </p>
           </details>
 
@@ -318,8 +394,9 @@
             The only network requests are for loading the application itself.
           </p>
           <p>
-            This tool is <a href="https://github.com/kraigh/genomegist" target="_blank" rel="noopener">open source</a>.
-            You can audit the code to verify these claims, or run it locally on your own machine.
+            The <a href="https://github.com/kraigh/genomegist" target="_blank" rel="noopener">source code</a>
+            is publicly available. You can audit the code to verify these claims, or run it locally
+            on your own machine.
           </p>
         </section>
 
@@ -327,16 +404,20 @@
           <h2>Pricing</h2>
           <div class="pricing-grid">
             <div class="pricing-tier">
-              <h3>Free</h3>
-              <p class="tier-desc">~15 common SNPs including MTHFR, APOE, COMT</p>
+              <h3>Free Demo</h3>
+              <p class="tier-desc">Try the tool with ~15 common SNPs</p>
               <p class="price">$0</p>
             </div>
             <div class="pricing-tier pricing-tier-highlight">
-              <h3>Full Report</h3>
-              <p class="tier-desc">1,000+ clinically relevant variants</p>
-              <p class="price">Coming soon</p>
+              <h3>Full Access</h3>
+              <p class="tier-desc">1,000+ variants across all categories</p>
+              <p class="price">$19.99</p>
             </div>
           </div>
+          <p class="pricing-note">
+            Full Access includes 3 sessions. Each session gives you 24 hours of unlimited
+            access — process multiple files, export with any settings, as many times as you need.
+          </p>
         </section>
 
         <section id="disclaimer" class="disclaimer-section card">
@@ -361,10 +442,12 @@
       <footer>
         <p>
           <span id="version-text">GenomeGist</span> ·
-          <a href="#disclaimer">Disclaimer</a> ·
-          For research and educational use only
+          <a href="/terms.html">Terms of Service</a> ·
+          <a href="/privacy.html">Privacy Policy</a> ·
+          <a href="#disclaimer">Disclaimer</a>
         </p>
         <p class="attribution">
+          For research and educational use only ·
           DNA icon by <a href="https://www.flaticon.com/free-icons/dna" target="_blank" rel="noopener">Flaticon</a>
         </p>
       </footer>

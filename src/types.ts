@@ -84,15 +84,28 @@ export const ALL_CATEGORIES: SNPCategory[] = [
 
 /**
  * Category preset options
+ * - demo: Free tier with limited SNPs (uses all categories but limited by free SNP list)
+ * - wellness: Paid tier focused on lifestyle optimization
+ * - full: Paid tier with all categories including medical markers
  */
-export type CategoryPreset = 'wellness' | 'full';
+export type CategoryPreset = 'demo' | 'wellness' | 'full';
 
 /**
  * Preset definitions mapping preset names to included categories
  */
 export const CATEGORY_PRESETS: Record<CategoryPreset, SNPCategory[]> = {
+  demo: ALL_CATEGORIES, // Demo uses all categories but limited by free SNP list
   wellness: ['methylation', 'nutrition', 'neurotransmitters', 'detoxification'],
   full: ALL_CATEGORIES,
+};
+
+/**
+ * Whether a preset requires a paid token
+ */
+export const PRESET_REQUIRES_TOKEN: Record<CategoryPreset, boolean> = {
+  demo: false,
+  wellness: true,
+  full: true,
 };
 
 /**

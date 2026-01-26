@@ -47,18 +47,18 @@ That's it. The name is the logo.
 
 ## Design Philosophy
 
-### The "Old Bootstrap" Aesthetic
+### Clean, Professional Utility
 
-GenomeGist should feel like a well-made developer tool from 2014 — competent, straightforward, and respectful of the user's time. Think early Stripe documentation, GitHub Pages project sites, or single-purpose tools like jsonformatter.org.
+GenomeGist should feel like a modern, polished developer tool — sleek without being flashy, professional without being corporate. Think Linear, Vercel, or Stripe's current documentation. The design should feel refined and purposeful.
 
-This aesthetic signals credibility to our technical audience. It says: "This tool works. No gimmicks."
+This aesthetic signals credibility to our technical audience. It says: "Built with care. Works reliably."
 
 **Reference points:**
-- Early Bootstrap sites (pre-4.0)
-- GitHub project pages
-- Hacker News
-- Single-purpose dev utilities (carbon.now.sh, readme.so)
-- Old Stripe docs
+- Linear (clean, modern SaaS)
+- Vercel dashboard
+- Modern Stripe docs
+- GitHub's current design system
+- Raycast, Arc browser
 
 ### Core Principles
 
@@ -76,15 +76,15 @@ This aesthetic signals credibility to our technical audience. It says: "This too
 
 ### Color Palette
 
-Keep it simple and muted. Near-black text on white/off-white backgrounds. One accent color for interactive elements — either a standard link blue or a muted green (genomics association).
+Clean and purposeful. Use a restrained palette with good contrast. Primary text should be dark enough for easy reading. Use a teal/science accent color that feels modern and trustworthy. Subtle gradients and backgrounds can add polish without distraction.
 
-Avoid: Bright colors, gradients, dark mode (unless trivial to add later).
+Avoid: Garish colors, excessive gradients, low-contrast text.
 
 ### Typography
 
-Use system fonts. No custom display fonts, no font loading. Body text should be readable (16px minimum) with generous line-height. Code and technical content in monospace.
+Use a clean, modern sans-serif like Inter or system fonts. Body text should be readable (16px minimum) with generous line-height. Code and technical content in monospace. Font weights should provide clear visual hierarchy.
 
-Avoid: Decorative fonts, small text, tight line-height.
+Avoid: Decorative fonts, small text, tight line-height, low font weights on body text.
 
 ### Spacing and Layout
 
@@ -94,9 +94,9 @@ Avoid: Sidebars, multi-column layouts, cramped spacing.
 
 ### Borders and Shadows
 
-Minimal. Thin borders (1px) in light gray where needed for structure. No drop shadows, no glows, no rounded corners beyond subtle (2-4px max).
+Refined and subtle. Use soft shadows to create depth and card separation. Rounded corners (6-16px) give a modern, approachable feel. Borders should be light but visible enough to define structure.
 
-Avoid: Heavy borders, box shadows, pill-shaped buttons.
+Avoid: Heavy drop shadows, excessive glow effects, overly rounded "pill" shapes on non-pill elements.
 
 ---
 
@@ -112,16 +112,17 @@ Avoid: Heavy borders, box shadows, pill-shaped buttons.
 
 ### Progress Indicators
 
-- Plain text status updates preferred
-- If using a progress bar, keep it simple (no animations, no gradients)
+- Clean spinner or progress indicator with monospace status text
 - Show specific numbers when possible ("Found 642,317 variants")
+- Subtle animations are acceptable for loading states
 
 ### Buttons
 
-- Solid, rectangular, minimal styling
-- Primary action: dark background, light text
+- Clean, modern styling with subtle gradients and shadows
+- Primary action: accent color background with subtle gradient, light text
 - Secondary action: light background, dark text with border
-- No icons unless absolutely necessary
+- Icons can enhance clarity; use SVG icons sparingly and consistently
+- Hover states should feel responsive (subtle lift, color shift)
 
 ### Status Messages
 
@@ -195,7 +196,7 @@ No navigation needed — the page is short enough to scroll.
 | Stock photos | Feels corporate |
 | Testimonials | We're a utility, not a lifestyle brand |
 | Social proof counters | "Join 10,000 users" feels salesy |
-| Animated anything | Gradients, spinners, transitions — too polished |
+| Excessive animation | Keep transitions subtle and purposeful |
 | Chat widgets | Adds complexity, doesn't fit the vibe |
 | Account creation | Tokens only, no login system |
 | Multiple pages | Everything on one page |
@@ -206,9 +207,9 @@ No navigation needed — the page is short enough to scroll.
 
 When building the site:
 
-- Start with semantic HTML, add minimal CSS
-- Avoid CSS frameworks unless they help achieve the "basic Bootstrap" look
-- Test on mobile but don't over-optimize
+- Start with semantic HTML, use CSS custom properties for theming
+- Keep the CSS organized with clear design tokens
+- Test on mobile but design desktop-first
 - Keep JavaScript minimal (parsing logic is separate from UI chrome)
 - Version number should be visible somewhere (footer is fine)
 
@@ -220,53 +221,69 @@ When building the site:
 
 ### Colors
 ```
-Primary text:       #1a1a1a
-Secondary text:     #555
-Background:         #fff
-Background alt:     #f8f9fa
-Accent:             #0066cc
-Accent hover:       #0052a3
-Borders:            #ddd
-Success:            #228b22
-Error:              #cc0000
-Code background:    #f5f5f5
+Primary (teal):     #0d9488
+Primary light:      #14b8a6
+Primary dark:       #0f766e
+Primary bg:         #f0fdfa
+
+Primary text:       #1e293b
+Secondary text:     #475569
+Muted text:         #64748b
+
+Background:         #f8fafc
+Surface (cards):    #ffffff
+Border:             #cbd5e1
+Border light:       #e2e8f0
+
+Success:            #10b981
+Success bg:         #ecfdf5
+Error:              #ef4444
+Error bg:           #fef2f2
 ```
 
 ### Typography
 ```
-Font stack:         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif
+Font stack:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif
 Monospace font:     ui-monospace, 'SF Mono', Menlo, Monaco, 'Cascadia Code', monospace
-Base size:          16px
+Base size:          16px (1rem)
 Line height:        1.6
 H1 size:            2rem (32px)
 H2 size:            1.25rem (20px)
-H3 size:            1.1rem (17.6px)
+H3 size:            1rem (16px)
+Small text:         0.875rem (14px)
 ```
 
 ### Spacing
 ```
-Content max-width:  720px
+Content max-width:  760px
 Spacing xs:         0.5rem (8px)
-Spacing sm:         1rem (16px)
-Spacing md:         1.5rem (24px)
-Spacing lg:         2rem (32px)
-Spacing xl:         3rem (48px)
+Spacing sm:         0.75rem (12px)
+Spacing md:         1rem (16px)
+Spacing lg:         1.5rem (24px)
+Spacing xl:         2rem (32px)
+Spacing 2xl:        3rem (48px)
 ```
 
-### Components
+### Effects
 ```
-Button padding:     0.6rem 1.2rem
-Button border-radius: 3px
-Border width:       1px
-Border radius:      3px
-Upload zone border: 2px dashed
+Border radius sm:   6px
+Border radius md:   10px
+Border radius lg:   16px
+
+Shadow sm:          0 1px 2px rgba(0, 0, 0, 0.05)
+Shadow md:          0 4px 6px -1px rgba(0, 0, 0, 0.07)
+Shadow lg:          0 10px 15px -3px rgba(0, 0, 0, 0.08)
+
+Transitions:        150-300ms ease
 ```
 
 ### Specific Decisions
 ```
-- Dark buttons on light background (not accent-colored) for primary actions
-- Status messages use left border accent (3px) instead of full border
-- Upload zone uses dashed border with 2px width
-- System fonts only, no web font loading
-- Minimal transitions (0.15s) only on interactive elements
+- Teal accent color throughout for brand consistency
+- Cards with soft shadows for depth and separation
+- Gradient backgrounds (subtle) for visual interest
+- Primary buttons use gradient with hover lift effect
+- Upload zone uses dashed border that transitions to solid on drag
+- Inter font for modern, readable typography
+- Subtle transitions on all interactive elements
 ```
