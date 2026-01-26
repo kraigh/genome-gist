@@ -74,12 +74,17 @@
 
 ### 1.10 Integration & Polish
 - [x] Wire up all components end-to-end
-- [ ] Test full flow with real genome file
+- [x] Test full flow with real genome file (via CLI)
 - [x] Add privacy messaging to page ("Your data never leaves your browser")
 - [x] Add brief explanation section (what this tool does)
 - [x] Add footer (version, disclaimer link)
 - [ ] Cross-browser testing (Chrome, Firefox, Safari)
 - [ ] Mobile responsiveness check
+
+### 1.17 CLI Interface
+- [x] Create CLI for terminal-based testing
+- [x] Support --format, --categories, --output options
+- [x] Test full extraction pipeline with real 23andMe v5 file
 
 ### 1.11 Code Review Fixes (Critical)
 - [x] Create proper ParseError class extending Error (parser/index.ts)

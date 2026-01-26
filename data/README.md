@@ -7,9 +7,9 @@ This folder contains development data files that are **not checked into git**.
 Place these files here for local development:
 
 ### `snp-list-full.json`
-The full curated SNP list from the snp-pipeline project. This is the proprietary list served to paid users.
+The full curated SNP list from the genome-gist-pipeline project. This is the proprietary list served to paid users.
 
-Get it from: `snp-pipeline/output/snp_list_YYYY_MM.json`
+Get it from: `genome-gist-pipeline/output/snp_list_YYYY_MM.json`
 
 ### `sample-23andme.txt`
 A real 23andMe raw data export for testing the parser. 
