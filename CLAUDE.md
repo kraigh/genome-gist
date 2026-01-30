@@ -220,17 +220,17 @@ function validateToken(token: string): ValidationResult {
 
 **Note:** The SNP list is encrypted. See "SNP List Decryption" section below.
 
-### POST /api/recover-token
+### License Key Recovery
 
-**Request:**
-```json
-{ "email": "user@example.com" }
-```
+Users who need to recover their license key should visit Lemon Squeezy's "My Orders" page:
+**https://app.lemonsqueezy.com/my-orders**
 
-**Response (always succeeds to prevent enumeration):**
-```json
-{ "success": true }
-```
+There they can enter their email address and receive a link to view all their orders and license keys.
+
+**Frontend implementation:**
+- Add "Forgot your license key?" link in the license input section
+- Link opens `https://app.lemonsqueezy.com/my-orders` in a new tab
+- No API call needed — Lemon Squeezy handles the entire flow
 
 ### Frontend License Key Flow
 

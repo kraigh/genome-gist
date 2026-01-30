@@ -137,13 +137,26 @@
 - [x] Show estimated variant counts per tier in preview
 - [ ] Add subtle "upgrade" messaging for free tier users
 
-### 2.0.1 Results View UX (Re-extraction Flow)
-- [ ] Keep category selection visible in results view (not just preview)
-- [ ] Keep output format selection visible in results view
-- [ ] Add "Re-extract" button that uses cached SNP list
-- [ ] Show "Session active — unlimited use until [time]" message
+### 2.0.1 Unified Extraction Panel UX Redesign
+- [x] Replace multi-step flow (Preview → Results) with single unified panel
+- [x] Simplify tier selection to two options (Free Demo vs Full Report)
+- [x] Show all options on same screen (tier, categories, output format)
+- [x] Real-time extraction preview with match counts (matched, no-call, missing)
+- [x] Category checkboxes with SNP counts per category
+- [x] File size estimate that updates with format selection
+- [x] "Change File" button to return to upload
+- [x] Download button directly in panel with re-extraction messaging
+- [x] User-friendly file naming (my-genome-snps-{date}.yaml)
+- [x] License section states: Purchase CTA, Manual input, Active badge
+- [x] Session info displayed in active license badge
+
+### 2.0.2 Results View UX (Legacy - Superseded by 2.0.1)
+- [x] Keep category selection visible in results view (not just preview)
+- [x] Keep output format selection visible in results view
+- [x] Add "Re-extract" button that uses cached SNP list
+- [x] Show "Session active — unlimited use until [time]" message
 - [x] Rename "Upload different file" → "Process different file"
-- [ ] "Process different file" returns to upload (session continues, can process more files)
+- [x] "Process different file" returns to upload (session continues, can process more files)
 - [x] Update copy throughout: "3 sessions" not "3 uses"
 - [ ] Explain session model: "Each session = 24 hours of unlimited access"
 
@@ -158,30 +171,30 @@
 
 ### 2.2 API Integration
 - [x] Create validate-token API endpoint (in genome-gist-infra repo)
-- [ ] Implement client-side token validation call
-- [ ] Implement SNP list decryption (AES-256-GCM, key = SHA-256(token), see CLAUDE.md)
-- [ ] Handle API errors gracefully (invalid_token, exhausted, network errors)
-- [ ] Keep decrypted SNP list in closure/private scope (not global)
-- [ ] Cache decrypted SNP list in memory (persists until page refresh/close)
+- [x] Implement client-side token validation call
+- [x] Implement SNP list decryption (AES-256-GCM, key = SHA-256(token), see CLAUDE.md)
+- [x] Handle API errors gracefully (invalid_token, exhausted, network errors)
+- [x] Keep decrypted SNP list in closure/private scope (not global)
+- [x] Cache decrypted SNP list in memory (persists until page refresh/close)
 
 ### 2.2.1 Session-Based Token Model (24-Hour Unlimited Windows)
 **Model:** Each license ($29) includes 3 sessions. Each session = 24 hours of unlimited use (multiple files, any settings, unlimited exports).
 
 **Frontend changes:**
-- [ ] Cache paid SNP list in memory; only re-fetch if cache empty or session expired
-- [ ] Show session expiry time after validation ("Session active — unlimited use until [time]")
-- [ ] Update copy: "sessions remaining" terminology throughout
-- [ ] Allow processing multiple files within a session without consuming additional sessions
-- [ ] If session expired, show message and re-fetch SNP list (starts new session)
+- [x] Cache paid SNP list in memory; only re-fetch if cache empty or session expired
+- [x] Show session expiry time after validation ("Session active — unlimited use until [time]")
+- [x] Update copy: "sessions remaining" terminology throughout
+- [x] Allow processing multiple files within a session without consuming additional sessions
+- [x] If session expired, show message and re-fetch SNP list (starts new session)
 - [ ] Clear messaging: "You have 24 hours of unlimited access"
 
 **Backend changes (genome-gist-infra repo):**
-- [ ] Add `lastUsedAt` timestamp to token record in KV
-- [ ] Add session window constant (24 hours = 86400000ms)
-- [ ] On validate-token: if `now - lastUsedAt < 24h`, return SNP list WITHOUT decrementing
-- [ ] On validate-token: if `now - lastUsedAt >= 24h` OR first use, decrement and update `lastUsedAt`
-- [ ] Return `sessionExpiresAt` in response (lastUsedAt + 24h)
-- [ ] Token record structure: `{ sessionsRemaining: number, lastUsedAt: string | null }`
+- [x] Add `lastSessionStartedAt` timestamp to token record in KV
+- [x] Add session window constant (24 hours = 86400000ms)
+- [x] On validate-token: if `now - lastSessionStartedAt < 24h`, return SNP list WITHOUT decrementing
+- [x] On validate-token: if `now - lastSessionStartedAt >= 24h` OR first use, decrement and update timestamp
+- [x] Return `sessionExpiresAt` in response (lastSessionStartedAt + 24h)
+- [x] Token record structure: `{ sessionsRemaining: number, lastSessionStartedAt: string | null }`
 
 ### 2.3 Purchase Flow UI
 - [x] Add "Get Full Report" CTA button in preview step
@@ -190,17 +203,21 @@
 - [x] Auto-store token in localStorage after purchase
 - [x] Create .env.example for Lemon Squeezy configuration
 
-### 2.4 Lemon Squeezy Integration (backend)
-- [ ] Set up Lemon Squeezy Checkout for token purchase
-- [ ] Implement webhook for payment confirmation
-- [ ] Generate and email token on successful payment
+### 2.4 Lemon Squeezy Integration (backend - done in genome-gist-infra)
+- [x] Set up Lemon Squeezy Checkout for token purchase
+- [x] Implement webhook for payment confirmation (license_key_created, order_refunded)
+- [x] License key generated by Lemon Squeezy, stored in KV on webhook
+- [x] LS sends purchase confirmation email with license key
 
 ### 2.5 Token Backend (handled in genome-gist-infra repo)
 - [x] Cloudflare KV for token storage
 - [x] Token generation on Lemon Squeezy payment
 - [x] Token validation endpoint with use-counting
-- [x] Token recovery endpoint
-- [x] Email via Resend (purchase confirmation + recovery)
+
+### 2.6 License Key Recovery
+- [x] Add "Forgot your license key?" link in license input section
+- [x] Link to Lemon Squeezy's My Orders page: https://app.lemonsqueezy.com/my-orders
+- [x] LS handles email lookup and displays all orders/license keys
 
 ---
 
@@ -251,3 +268,5 @@
 | 2025-01-25 | Two-step UX with preview | Better user control, allows category selection before extraction |
 | 2025-01-25 | Wellness/Full Report presets | Simple default choices with ability to customize |
 | 2025-01-25 | SNP list encrypted in API response | Decrypt with SHA-256(token) as AES-GCM key; prevents casual dev tools theft |
+| 2025-01-29 | Unified extraction panel UX | Replaced multi-step flow with single screen showing all options; simplified to two tiers (Free/Full) |
+| 2025-01-29 | User-friendly filenames | Changed from "genomegist-results" to "my-genome-snps" for better user understanding |

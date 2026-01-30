@@ -64,156 +64,161 @@
             <button id="dismiss-success-banner" class="success-banner-dismiss" aria-label="Dismiss">&times;</button>
           </div>
 
-          <div id="preview" class="preview" hidden>
-            <div class="preview-header">
-              <svg class="preview-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Unified Extraction Panel (shown after file upload) -->
+          <div id="extraction-panel" class="extraction-panel" hidden>
+            <!-- File info header -->
+            <div class="file-info-header">
+              <svg class="file-info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M13 3V8C13 8.55228 13.4477 9 14 9H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              <div class="preview-info">
-                <p class="preview-format">Format detected: <strong id="detected-format">23andMe v5</strong></p>
-                <p class="preview-count">Total variants in file: <strong id="variant-count">0</strong></p>
+              <div class="file-info-text">
+                <span id="detected-format">23andMe v5</span>
+                <span class="file-info-separator">·</span>
+                <span><strong id="variant-count">0</strong> variants</span>
               </div>
+              <button id="change-file-btn" class="btn btn-link">Change File</button>
             </div>
 
-            <div class="category-filter">
-              <label class="filter-label">Choose your report</label>
+            <!-- Two-column layout -->
+            <div class="extraction-columns">
+              <!-- Left column: Tier, License, Categories -->
+              <div class="extraction-column extraction-column-left">
+                <div class="panel-section">
+                  <label class="section-label">Report Type</label>
+                  <div class="tier-options">
+                    <label class="tier-option" data-tier="free">
+                      <input type="radio" name="tier" value="free" checked />
+                      <span class="tier-radio"></span>
+                      <span class="tier-content">
+                        <span class="tier-name">Free Demo</span>
+                        <span class="tier-desc">~15 SNPs</span>
+                      </span>
+                    </label>
+                    <label class="tier-option" data-tier="full">
+                      <input type="radio" name="tier" value="full" />
+                      <span class="tier-radio"></span>
+                      <span class="tier-content">
+                        <span class="tier-name">Full Report</span>
+                        <span class="tier-desc">1,000+ SNPs</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
 
-              <div class="preset-options">
-                <label class="preset-option" data-tier="free">
-                  <input type="radio" name="category-preset" value="demo" checked />
-                  <span class="preset-radio"></span>
-                  <span class="preset-content">
-                    <span class="preset-name">
-                      Free Demo
-                      <span class="preset-badge preset-badge-free">Free</span>
-                    </span>
-                    <span class="preset-desc">~15 common SNPs including MTHFR, APOE, COMT</span>
-                  </span>
-                </label>
-                <label class="preset-option" data-tier="paid">
-                  <input type="radio" name="category-preset" value="wellness" />
-                  <span class="preset-radio"></span>
-                  <span class="preset-content">
-                    <span class="preset-name">
-                      Wellness Report
-                      <span class="preset-badge preset-badge-paid">Full Access</span>
-                    </span>
-                    <span class="preset-desc">Nutrition, methylation, neurotransmitters, detox</span>
-                  </span>
-                </label>
-                <label class="preset-option" data-tier="paid">
-                  <input type="radio" name="category-preset" value="full" />
-                  <span class="preset-radio"></span>
-                  <span class="preset-content">
-                    <span class="preset-name">
-                      Complete Report
-                      <span class="preset-badge preset-badge-paid">Full Access</span>
-                    </span>
-                    <span class="preset-desc">All categories including drug response, cardiovascular, and immune</span>
-                  </span>
-                </label>
-              </div>
+                <!-- License section: Purchase CTA (shown when Full selected, no license) -->
+                <div id="license-purchase" class="license-section license-purchase" hidden>
+                  <button id="purchase-btn" class="btn btn-purchase">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Purchase Full Access — $29
+                  </button>
+                  <p class="license-hint">
+                    <a href="#" id="manual-key-link">Already have a license key?</a>
+                  </p>
+                </div>
 
-              <!-- Token input section (shown when paid tier selected without valid token) -->
-              <div id="token-section" class="token-section" hidden>
-                <div class="token-prompt">
-                  <p>Full Access required for this report.</p>
-                  <div class="token-input-row">
+                <!-- License section: Manual input (shown when user clicks "Already have a license key?") -->
+                <div id="license-input" class="license-section license-input" hidden>
+                  <div class="license-input-row">
                     <input type="text" id="token-input" class="token-input" placeholder="Enter your license key" />
                     <button id="token-validate-btn" class="btn btn-primary btn-sm">Validate</button>
                   </div>
-                  <p class="token-hint">
-                    Don't have a license key? <a href="#" id="purchase-link">Get Full Access ($29)</a>
+                  <p class="license-hint">
+                    <a href="#" id="back-to-purchase-link">Back to purchase</a>
+                    <span class="hint-separator">·</span>
+                    <a href="https://app.lemonsqueezy.com/my-orders" target="_blank" rel="noopener">Forgot your license key?</a>
+                  </p>
+                  <div id="token-status" class="token-status" hidden></div>
+                </div>
+
+                <!-- License section: Active badge (shown when valid license) -->
+                <div id="license-active" class="license-section license-active" hidden>
+                  <div class="license-badge">
+                    <svg class="license-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span id="license-status-text">Full Access Unlocked</span>
+                  </div>
+                  <span id="session-info" class="session-info"></span>
+                  <button id="token-clear-btn" class="btn btn-link btn-sm">Clear License</button>
+                </div>
+
+                <!-- Categories section -->
+                <div id="categories-section" class="panel-section categories-section">
+                  <label class="section-label">Categories</label>
+                  <div class="category-checkboxes" id="category-checkboxes">
+                    <!-- Generated dynamically by JavaScript -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right column: Format, Preview, Download -->
+              <div class="extraction-column extraction-column-right">
+                <div class="panel-section">
+                  <label class="section-label">Output Format</label>
+                  <div class="format-options">
+                    <label class="format-option">
+                      <input type="radio" name="output-format" value="detailed" checked />
+                      <span class="format-radio"></span>
+                      <span class="format-content">
+                        <span class="format-name">Detailed</span>
+                        <span class="format-desc">Human-readable with annotations</span>
+                      </span>
+                    </label>
+                    <label class="format-option">
+                      <input type="radio" name="output-format" value="compact" />
+                      <span class="format-radio"></span>
+                      <span class="format-content">
+                        <span class="format-name">Compact</span>
+                        <span class="format-desc">AI-optimized, smaller file</span>
+                      </span>
+                    </label>
+                    <label class="format-option">
+                      <input type="radio" name="output-format" value="minimal" />
+                      <span class="format-radio"></span>
+                      <span class="format-content">
+                        <span class="format-name">Minimal</span>
+                        <span class="format-desc">CSV format, smallest size</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Extraction preview -->
+                <div class="panel-section extraction-preview">
+                  <label class="section-label">Extraction Preview</label>
+                  <div class="preview-stats">
+                    <div class="preview-stat">
+                      <span class="preview-stat-value" id="preview-matched">0</span>
+                      <span class="preview-stat-label">matched</span>
+                    </div>
+                    <div class="preview-stat preview-stat-secondary">
+                      <span class="preview-stat-value" id="preview-nocall">0</span>
+                      <span class="preview-stat-label">no-call</span>
+                    </div>
+                    <div class="preview-stat preview-stat-secondary">
+                      <span class="preview-stat-value" id="preview-missing">0</span>
+                      <span class="preview-stat-label">missing</span>
+                    </div>
+                  </div>
+                  <p class="file-size-estimate">
+                    Est. file size: <strong id="file-size">—</strong>
                   </p>
                 </div>
-                <div id="token-status" class="token-status" hidden></div>
-              </div>
-
-              <!-- License key status badge (shown when valid license key stored) -->
-              <div id="token-active" class="token-active" hidden>
-                <svg class="token-active-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span id="license-status-text">License key applied</span>
-                <span id="session-info" class="session-info"></span>
-                <button id="token-clear-btn" class="token-clear-btn">Clear</button>
-              </div>
-
-              <details class="category-details">
-                <summary>Customize categories</summary>
-                <div class="category-checkboxes" id="category-checkboxes">
-                  <!-- Generated dynamically by JavaScript -->
-                </div>
-              </details>
-            </div>
-
-            <div class="preview-estimate">
-              <p>Estimated matches: <strong id="estimate-count">0</strong> variants</p>
-            </div>
-
-            <div class="preview-actions">
-              <button id="back-btn" class="btn btn-secondary">
-                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Process Different File
-              </button>
-              <button id="extract-btn" class="btn btn-primary">
-                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M9 14L11 16L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Extract Variants
-              </button>
-            </div>
-          </div>
-
-          <div id="results" class="results" hidden>
-            <div class="results-header">
-              <svg class="results-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <p id="results-summary"></p>
-            </div>
-
-            <div class="format-selector">
-              <label class="format-label">Output format:</label>
-              <div class="format-options">
-                <label class="format-option">
-                  <input type="radio" name="output-format" value="detailed" checked />
-                  <span class="format-radio"></span>
-                  <span class="format-content">
-                    <span class="format-name">Detailed</span>
-                    <span class="format-desc">Human-readable with annotations</span>
-                  </span>
-                </label>
-                <label class="format-option">
-                  <input type="radio" name="output-format" value="compact" />
-                  <span class="format-radio"></span>
-                  <span class="format-content">
-                    <span class="format-name">Compact</span>
-                    <span class="format-desc">AI-optimized, smaller file</span>
-                  </span>
-                </label>
-                <label class="format-option">
-                  <input type="radio" name="output-format" value="minimal" />
-                  <span class="format-radio"></span>
-                  <span class="format-content">
-                    <span class="format-name">Minimal</span>
-                    <span class="format-desc">CSV format, smallest size</span>
-                  </span>
-                </label>
               </div>
             </div>
 
-            <div class="download-row">
-              <button id="download-btn" class="btn btn-primary">
+            <!-- Save section -->
+            <div class="extraction-actions">
+              <button id="download-btn" class="btn btn-primary btn-lg">
                 <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15M12 3V15M12 15L7 10M12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Download Results
+                Save Results
               </button>
-              <span id="file-size" class="file-size"></span>
+              <p id="extraction-hint" class="extraction-hint">Change any settings above and save again anytime.</p>
             </div>
           </div>
 
@@ -284,47 +289,50 @@
                 as you like with unlimited exports for 24 hours.
               </p>
               <p class="tier-price">$29</p>
+              <button class="btn btn-primary btn-buy-now" data-action="buy">Buy Now</button>
             </div>
           </div>
 
           <h3 class="categories-heading">Categories in Full Report</h3>
           <p class="categories-intro">
-            The complete report covers these categories. Select Wellness for lifestyle
-            optimization, or Full Report to include all.
+            The Full Report covers all categories below. You can customize which
+            categories to include when downloading your results.
           </p>
 
           <div class="category-grid">
             <div class="category-item">
-              <h3>Methylation</h3>
-              <p>MTHFR and related genes affecting folate metabolism and homocysteine levels.
-                 Relevant for B-vitamin supplementation.</p>
-            </div>
-            <div class="category-item">
-              <h3>Nutrition</h3>
-              <p>Vitamin D metabolism, lactose tolerance, obesity risk factors, and caffeine
-                 sensitivity.</p>
-            </div>
-            <div class="category-item">
-              <h3>Neurotransmitters</h3>
-              <p>COMT, BDNF, and dopamine-related variants affecting mood, focus, and stress
-                 response.</p>
-            </div>
-            <div class="category-item">
-              <h3>Drug Response</h3>
-              <p>CYP2C19, CYP2D6, and other genes affecting how you metabolize medications.
-                 Important for personalized medicine.</p>
-            </div>
-            <div class="category-item">
-              <h3>Cardiovascular</h3>
-              <p>APOE and other markers associated with heart health and lipid metabolism.</p>
+              <h3>Lipids</h3>
+              <p>Cholesterol and fat metabolism, APOE variants, and obesity-related markers.</p>
             </div>
             <div class="category-item">
               <h3>Detoxification</h3>
-              <p>Genes involved in clearing toxins and environmental compounds from your body.</p>
+              <p>CYP450 enzymes for toxin processing, including caffeine and environmental
+                 compound metabolism.</p>
             </div>
             <div class="category-item">
-              <h3>Immune</h3>
-              <p>Immune system function and inflammation markers that may affect health outcomes.</p>
+              <h3>Vitamins &amp; Minerals</h3>
+              <p>Vitamin D, A, B12 metabolism and iron absorption pathways.</p>
+            </div>
+            <div class="category-item">
+              <h3>Hormones &amp; Mood</h3>
+              <p>COMT, dopamine, serotonin, and hormone-related variants affecting mood
+                 and stress response.</p>
+            </div>
+            <div class="category-item">
+              <h3>Cardiovascular</h3>
+              <p>Heart health markers and inflammation-related variants.</p>
+            </div>
+            <div class="category-item">
+              <h3>Drug Response</h3>
+              <p>CYP2C19, CYP2D6, and other genes affecting how you metabolize medications.</p>
+            </div>
+            <div class="category-item">
+              <h3>Food Sensitivities</h3>
+              <p>Lactose tolerance, celiac markers, histamine, and alcohol metabolism.</p>
+            </div>
+            <div class="category-item">
+              <h3>Methylation</h3>
+              <p>MTHFR and related genes affecting folate metabolism and homocysteine levels.</p>
             </div>
           </div>
         </section>
@@ -373,12 +381,12 @@
           </details>
 
           <details class="faq-item">
-            <summary>What's the difference between Wellness and Full Report?</summary>
+            <summary>What's included in the Full Report vs. Free Demo?</summary>
             <p>
-              Wellness Only includes nutrition, methylation, neurotransmitter, and detoxification
-              variants — useful for lifestyle optimization. Full Report adds pharmacogenomics
-              (drug response), cardiovascular, and immune markers, which have more direct
-              medical implications.
+              The Free Demo includes ~15 well-known SNPs like MTHFR, APOE, and COMT — great for
+              trying the tool. The Full Report includes 600+ curated variants across 8 categories:
+              lipids, detoxification, vitamins &amp; minerals, hormones &amp; mood, cardiovascular,
+              drug response, food sensitivities, and methylation.
             </p>
           </details>
 
@@ -424,6 +432,7 @@
               <h3>Full Access</h3>
               <p class="tier-desc">1,000+ variants across all categories</p>
               <p class="price">$29</p>
+              <button class="btn btn-primary btn-buy-now" data-action="buy">Buy Now</button>
             </div>
           </div>
           <p class="pricing-note">
