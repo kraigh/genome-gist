@@ -22,7 +22,12 @@ import {
   ESTIMATED_CATEGORY_COUNTS,
 } from './types';
 import { VERSION, TOOL_NAME } from './version';
-import { initializeLemonSqueezy, openCheckout, isLemonSqueezyConfigured } from './lemon-squeezy';
+import {
+  initializeLemonSqueezy,
+  openCheckout,
+  isLemonSqueezyConfigured,
+  isPurchaseEnabled,
+} from './lemon-squeezy';
 
 // localStorage keys
 const FORMAT_STORAGE_KEY = 'genomegist-output-format';
@@ -30,7 +35,8 @@ const TIER_STORAGE_KEY = 'genomegist-tier';
 const TOKEN_STORAGE_KEY = 'genomegist-token';
 
 // API configuration
-const API_BASE_URL = 'https://api.genomegist.com';
+// API URL - use env var for local testing with test worker, default to production
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.genomegist.com';
 
 /**
  * Decrypt the paid SNP list using the token as the key
@@ -352,9 +358,30 @@ async function init(): Promise<void> {
 
   // Set up Buy Now buttons on the page
   const buyNowButtons = document.querySelectorAll<HTMLButtonElement>('[data-action="buy"]');
+  const purchaseEnabled = isPurchaseEnabled();
+
   buyNowButtons.forEach((btn) => {
-    btn.addEventListener('click', handlePurchaseClick);
+    if (purchaseEnabled) {
+      btn.addEventListener('click', handlePurchaseClick);
+    } else {
+      // Disable button and show "Coming Soon" in production
+      btn.disabled = true;
+      btn.textContent = 'Coming Soon';
+      btn.classList.add('btn-disabled');
+    }
   });
+
+  // Also update the main purchase button in the extraction panel
+  if (!purchaseEnabled) {
+    purchaseBtn.disabled = true;
+    purchaseBtn.innerHTML = `
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Coming Soon — $29
+    `;
+    purchaseBtn.classList.add('btn-disabled');
+  }
 
   try {
     showStatus('Loading SNP list...');
@@ -549,6 +576,14 @@ function clearToken(): void {
 // Handle purchase button click
 function handlePurchaseClick(e: Event): void {
   e.preventDefault();
+
+  // Safety check - should not reach here if purchases are disabled
+  if (!isPurchaseEnabled()) {
+    showManualInput = true;
+    updateLicenseSectionUI();
+    showTokenStatus('Purchases are not yet available. Please check back soon!', 'error');
+    return;
+  }
 
   if (!isLemonSqueezyConfigured()) {
     showManualInput = true;

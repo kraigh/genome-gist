@@ -196,3 +196,23 @@ export function openCheckout(options: {
 export function isLemonSqueezyConfigured(): boolean {
   return Boolean(LEMON_SQUEEZY_STORE_ID && LEMON_SQUEEZY_VARIANT_ID);
 }
+
+/**
+ * Check if purchases are enabled
+ * - In development mode: enabled if Lemon Squeezy is configured (for testing)
+ * - In production: disabled by default, can be enabled via VITE_PURCHASES_ENABLED=true
+ */
+export function isPurchaseEnabled(): boolean {
+  // Check explicit enable flag (for production)
+  const explicitlyEnabled = import.meta.env.VITE_PURCHASES_ENABLED === 'true';
+  if (explicitlyEnabled && isLemonSqueezyConfigured()) {
+    return true;
+  }
+
+  // In development mode, enable if Lemon Squeezy is configured
+  if (import.meta.env.DEV && isLemonSqueezyConfigured()) {
+    return true;
+  }
+
+  return false;
+}
