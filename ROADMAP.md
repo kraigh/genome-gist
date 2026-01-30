@@ -165,7 +165,7 @@
 - [ ] Cache decrypted SNP list in memory (persists until page refresh/close)
 
 ### 2.2.1 Session-Based Token Model (24-Hour Unlimited Windows)
-**Model:** Each token ($19.99) includes 3 sessions. Each session = 24 hours of unlimited use (multiple files, any settings, unlimited exports).
+**Model:** Each license ($29) includes 3 sessions. Each session = 24 hours of unlimited use (multiple files, any settings, unlimited exports).
 
 **Frontend changes:**
 - [ ] Cache paid SNP list in memory; only re-fetch if cache empty or session expired
@@ -184,20 +184,20 @@
 - [ ] Token record structure: `{ sessionsRemaining: number, lastUsedAt: string | null }`
 
 ### 2.3 Purchase Flow UI
-- [ ] Add "Get Full Report" CTA button in preview step
-- [ ] Link to Stripe Checkout for token purchase
-- [ ] Create success page that displays token and auto-stores it
-- [ ] Create cancel page with option to continue with free tier
-- [ ] Handle return from Stripe (detect token in URL params)
+- [x] Add "Get Full Report" CTA button in preview step
+- [x] Implement Lemon Squeezy overlay checkout (lemon-squeezy.ts)
+- [x] Handle checkout success callback and fetch token
+- [x] Auto-store token in localStorage after purchase
+- [x] Create .env.example for Lemon Squeezy configuration
 
-### 2.4 Stripe Integration (backend)
-- [ ] Set up Stripe Checkout for token purchase
+### 2.4 Lemon Squeezy Integration (backend)
+- [ ] Set up Lemon Squeezy Checkout for token purchase
 - [ ] Implement webhook for payment confirmation
 - [ ] Generate and email token on successful payment
 
 ### 2.5 Token Backend (handled in genome-gist-infra repo)
 - [x] Cloudflare KV for token storage
-- [x] Token generation on Stripe payment
+- [x] Token generation on Lemon Squeezy payment
 - [x] Token validation endpoint with use-counting
 - [x] Token recovery endpoint
 - [x] Email via Resend (purchase confirmation + recovery)

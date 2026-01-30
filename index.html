@@ -52,6 +52,18 @@
             <p id="status-text"></p>
           </div>
 
+          <!-- Purchase success banner (shown after successful checkout) -->
+          <div id="purchase-success-banner" class="success-banner" hidden>
+            <svg class="success-banner-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div class="success-banner-content">
+              <strong>Purchase successful!</strong>
+              <span>Your license key has been applied. Upload a file to get started.</span>
+            </div>
+            <button id="dismiss-success-banner" class="success-banner-dismiss" aria-label="Dismiss">&times;</button>
+          </div>
+
           <div id="preview" class="preview" hidden>
             <div class="preview-header">
               <svg class="preview-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -108,22 +120,22 @@
                 <div class="token-prompt">
                   <p>Full Access required for this report.</p>
                   <div class="token-input-row">
-                    <input type="text" id="token-input" class="token-input" placeholder="Enter your token (gg_...)" />
+                    <input type="text" id="token-input" class="token-input" placeholder="Enter your license key" />
                     <button id="token-validate-btn" class="btn btn-primary btn-sm">Validate</button>
                   </div>
                   <p class="token-hint">
-                    Don't have a token? <a href="#" id="purchase-link">Get Full Access ($19.99)</a>
+                    Don't have a license key? <a href="#" id="purchase-link">Get Full Access ($29)</a>
                   </p>
                 </div>
                 <div id="token-status" class="token-status" hidden></div>
               </div>
 
-              <!-- Token active badge (shown when valid token stored) -->
+              <!-- License key status badge (shown when valid license key stored) -->
               <div id="token-active" class="token-active" hidden>
                 <svg class="token-active-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <span>Session active</span>
+                <span id="license-status-text">License key applied</span>
                 <span id="session-info" class="session-info"></span>
                 <button id="token-clear-btn" class="token-clear-btn">Clear</button>
               </div>
@@ -271,7 +283,7 @@
                 Comprehensive coverage across all categories. Process as many files
                 as you like with unlimited exports for 24 hours.
               </p>
-              <p class="tier-price">$19.99</p>
+              <p class="tier-price">$29</p>
             </div>
           </div>
 
@@ -411,7 +423,7 @@
             <div class="pricing-tier pricing-tier-highlight">
               <h3>Full Access</h3>
               <p class="tier-desc">1,000+ variants across all categories</p>
-              <p class="price">$19.99</p>
+              <p class="price">$29</p>
             </div>
           </div>
           <p class="pricing-note">

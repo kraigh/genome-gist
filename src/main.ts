@@ -3,7 +3,7 @@
  */
 
 import { parseGenomeFile, formatDisplayName } from './parser';
-import { loadFreeSNPList } from './snp-list';
+import { loadFreeSNPList, validateSNPList } from './snp-list';
 import { extractVariants, estimateMatches } from './extractor';
 import { toYAML, generateFilename, calculateSize } from './output';
 import type {
@@ -22,6 +22,7 @@ import {
   PRESET_REQUIRES_TOKEN,
 } from './types';
 import { VERSION, TOOL_NAME } from './version';
+import { initializeLemonSqueezy, openCheckout, isLemonSqueezyConfigured } from './lemon-squeezy';
 
 // localStorage keys
 const FORMAT_STORAGE_KEY = 'genomegist-output-format';
@@ -30,6 +31,86 @@ const TOKEN_STORAGE_KEY = 'genomegist-token';
 
 // API configuration
 const API_BASE_URL = 'https://api.genomegist.com';
+
+/**
+ * Decrypt the paid SNP list using the token as the key
+ * Uses AES-256-GCM with SHA-256(token) as the key
+ */
+async function decryptSnpList(
+  encryptedBase64: string,
+  ivBase64: string,
+  token: string
+): Promise<SNPList> {
+  // Decode base64 first (can throw on invalid input)
+  let encrypted: Uint8Array<ArrayBuffer>;
+  let iv: Uint8Array<ArrayBuffer>;
+  try {
+    encrypted = new Uint8Array(
+      atob(encryptedBase64)
+        .split('')
+        .map((c) => c.charCodeAt(0))
+    );
+    iv = new Uint8Array(
+      atob(ivBase64)
+        .split('')
+        .map((c) => c.charCodeAt(0))
+    );
+  } catch (err) {
+    console.error('Failed to decode encrypted SNP list:', err);
+    throw new Error('Failed to decrypt SNP data. The data may be corrupted.');
+  }
+
+  // Derive key from token (same as server)
+  const encoder = new TextEncoder();
+  const tokenBytes = encoder.encode(token);
+  const keyMaterial = await crypto.subtle.digest('SHA-256', tokenBytes);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyMaterial,
+    { name: 'AES-GCM' },
+    false,
+    ['decrypt']
+  );
+
+  // Decrypt
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted);
+
+  // Parse and validate the decrypted JSON
+  const data = JSON.parse(new TextDecoder().decode(decrypted));
+  return validateSNPList(data);
+}
+
+interface CheckLicenseResult {
+  valid: boolean;
+  sessionsRemaining?: number;
+  hasActiveSession?: boolean;
+  sessionExpiresAt?: string;
+  error?: string;
+}
+
+/**
+ * Check if a license key is valid WITHOUT consuming a session
+ * Used for initial validation on page load and when user enters a key
+ */
+async function checkLicense(licenseKey: string): Promise<CheckLicenseResult> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/check-license`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ licenseKey }),
+    });
+
+    if (!response.ok) {
+      console.error('License check HTTP error:', response.status);
+      return { valid: false, error: 'network_error' };
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error('License check error:', err);
+    return { valid: false, error: 'network_error' };
+  }
+}
 
 /**
  * Safely get a DOM element by ID with type checking
@@ -66,9 +147,12 @@ const tokenInput = getElement<HTMLInputElement>('token-input');
 const tokenValidateBtn = getElement<HTMLButtonElement>('token-validate-btn');
 const tokenStatus = getElement<HTMLDivElement>('token-status');
 const tokenActive = getElement<HTMLDivElement>('token-active');
+const licenseStatusText = getElement<HTMLSpanElement>('license-status-text');
 const sessionInfo = getElement<HTMLSpanElement>('session-info');
 const tokenClearBtn = getElement<HTMLButtonElement>('token-clear-btn');
 const purchaseLink = getElement<HTMLAnchorElement>('purchase-link');
+const purchaseSuccessBanner = getElement<HTMLDivElement>('purchase-success-banner');
+const dismissSuccessBanner = getElement<HTMLButtonElement>('dismiss-success-banner');
 
 // DOM elements - Results section
 const resultsDiv = getElement<HTMLDivElement>('results');
@@ -95,18 +179,87 @@ let currentPreset: CategoryPreset = 'demo';
 let storedToken: string | null = null;
 let sessionsRemaining: number | null = null;
 let sessionExpiresAt: Date | null = null;
+let hasActiveSession = false; // Whether there's an active 24h session (from check-license)
+let licenseValidated = false; // Whether license has been validated (without consuming session)
+let tokenTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 // Initialize
 async function init(): Promise<void> {
   // Set version in footer
   versionText.textContent = `${TOOL_NAME} v${VERSION}`;
 
-  // Restore token from localStorage
-  const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
-  if (savedToken) {
-    storedToken = savedToken;
-    // We'll validate token on next API call; for now just show as active
-    updateTokenUI();
+  // Set up dismiss button for success banner
+  dismissSuccessBanner.addEventListener('click', () => {
+    purchaseSuccessBanner.hidden = true;
+  });
+
+  // Check for URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlLicenseKey = urlParams.get('license_key');
+  const isPurchaseSuccess = urlParams.get('purchase') === 'success';
+
+  // Clean up URL without reloading the page
+  if (urlLicenseKey || isPurchaseSuccess) {
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
+  // Handle license key from URL (email link or purchase redirect)
+  if (urlLicenseKey) {
+    // Show purchase success banner if coming from checkout
+    if (isPurchaseSuccess) {
+      purchaseSuccessBanner.hidden = false;
+    }
+
+    // Validate the license key (without consuming a session)
+    showTokenStatus('Validating license key...', 'loading');
+    const result = await checkLicense(urlLicenseKey);
+
+    if (result.valid) {
+      // Store the validated license key
+      storedToken = urlLicenseKey;
+      sessionsRemaining = result.sessionsRemaining ?? null;
+      hasActiveSession = result.hasActiveSession ?? false;
+      sessionExpiresAt = result.sessionExpiresAt ? new Date(result.sessionExpiresAt) : null;
+      licenseValidated = true;
+      localStorage.setItem(TOKEN_STORAGE_KEY, urlLicenseKey);
+
+      tokenStatus.hidden = true;
+      updateTokenUI();
+    } else {
+      // Show error for invalid/exhausted license
+      const errorMsg = result.error === 'exhausted'
+        ? 'This license key has no remaining sessions. Purchase a new key to continue.'
+        : 'Invalid license key.';
+      showTokenStatus(errorMsg, 'error');
+      // Hide purchase success banner if license is invalid
+      purchaseSuccessBanner.hidden = true;
+    }
+  } else {
+    // Restore token from localStorage (if no URL param)
+    const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (savedToken) {
+      storedToken = savedToken;
+      // Validate the stored license key in background
+      const tokenBeingValidated = savedToken;
+      checkLicense(savedToken).then((result) => {
+        // Don't update state if token changed during validation (user cleared or entered new one)
+        if (storedToken !== tokenBeingValidated) return;
+
+        if (result.valid) {
+          sessionsRemaining = result.sessionsRemaining ?? null;
+          hasActiveSession = result.hasActiveSession ?? false;
+          sessionExpiresAt = result.sessionExpiresAt ? new Date(result.sessionExpiresAt) : null;
+          licenseValidated = true;
+          updateTokenUI();
+        } else {
+          // Stored license is no longer valid, clear it
+          clearToken();
+        }
+      });
+      // Show as active while we verify
+      updateTokenUI();
+    }
   }
 
   // Restore format preference
@@ -180,6 +333,11 @@ async function init(): Promise<void> {
     showError('Failed to load SNP list. Please refresh the page.');
     console.error('Failed to load SNP list:', err);
   }
+
+  // Initialize Lemon Squeezy for checkout (non-blocking)
+  initializeLemonSqueezy().catch((err) => {
+    console.warn('Lemon Squeezy initialization skipped:', err.message);
+  });
 }
 
 // Handle preset selection changes
@@ -212,30 +370,44 @@ function handlePresetChange(preset: CategoryPreset): void {
 function updateTokenSectionVisibility(): void {
   const requiresToken = PRESET_REQUIRES_TOKEN[currentPreset];
 
-  if (storedToken && paidSnpList) {
-    // Token is stored and SNP list cached - show active badge, hide input
+  if (storedToken && licenseValidated) {
+    // License key is stored and validated - show status badge
     tokenSection.hidden = true;
     tokenActive.hidden = false;
 
-    // Show session expiry info
-    if (sessionExpiresAt) {
+    // Update status text and session info based on state
+    if (hasActiveSession && sessionExpiresAt) {
       const now = new Date();
       if (sessionExpiresAt > now) {
         const hoursLeft = Math.ceil((sessionExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
+        licenseStatusText.textContent = 'Session active';
         sessionInfo.textContent = `· Unlimited exports for ${hoursLeft}h`;
       } else {
-        sessionInfo.textContent = '· Session expired';
+        // Session expired, but license still valid
+        licenseStatusText.textContent = 'License key applied';
+        sessionInfo.textContent = sessionsRemaining !== null ? `· ${sessionsRemaining} sessions available` : '';
       }
-    } else if (sessionsRemaining !== null) {
-      sessionInfo.textContent = `· ${sessionsRemaining} sessions remaining`;
+    } else if (paidSnpList) {
+      // Have SNP list cached (session started during this page load)
+      licenseStatusText.textContent = 'Session active';
+      if (sessionExpiresAt) {
+        const now = new Date();
+        const hoursLeft = Math.ceil((sessionExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
+        sessionInfo.textContent = `· Unlimited exports for ${hoursLeft}h`;
+      } else {
+        sessionInfo.textContent = '';
+      }
     } else {
-      sessionInfo.textContent = '';
+      // License validated but no active session yet
+      licenseStatusText.textContent = 'License key applied';
+      sessionInfo.textContent = sessionsRemaining !== null ? `· ${sessionsRemaining} sessions available` : '';
     }
   } else if (storedToken) {
-    // Token stored but no SNP list yet - show active badge
+    // Token stored but not yet validated - show as pending
     tokenSection.hidden = true;
     tokenActive.hidden = false;
-    sessionInfo.textContent = sessionsRemaining !== null ? `· ${sessionsRemaining} sessions remaining` : '';
+    licenseStatusText.textContent = 'Verifying license...';
+    sessionInfo.textContent = '';
   } else if (requiresToken) {
     // Paid tier selected but no token - show input section
     tokenSection.hidden = false;
@@ -252,63 +424,69 @@ function updateTokenUI(): void {
   updateTokenSectionVisibility();
 }
 
-// Handle token validation
+// Handle token validation (uses check-license, does NOT consume a session)
 async function handleTokenValidation(): Promise<void> {
   const token = tokenInput.value.trim();
 
   if (!token) {
-    showTokenStatus('Please enter a token.', 'error');
+    showTokenStatus('Please enter a license key.', 'error');
     return;
   }
 
-  // Validate token format
-  if (!token.startsWith('gg_') || token.length < 10) {
-    showTokenStatus('Invalid token format. Tokens start with "gg_".', 'error');
+  // Basic validation - license keys should have some minimum length
+  if (token.length < 8) {
+    showTokenStatus('Invalid license key format.', 'error');
     return;
   }
 
-  showTokenStatus('Validating token...', 'loading');
+  showTokenStatus('Validating license key...', 'loading');
   tokenValidateBtn.disabled = true;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-    });
+    const result = await checkLicense(token);
 
-    const data = await response.json();
-
-    if (data.valid) {
-      // Store token
+    if (result.valid) {
+      // Store the validated license key
       storedToken = token;
-      sessionsRemaining = data.sessionsRemaining ?? data.usesRemaining ?? null;
-      sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt) : null;
+      sessionsRemaining = result.sessionsRemaining ?? null;
+      hasActiveSession = result.hasActiveSession ?? false;
+      sessionExpiresAt = result.sessionExpiresAt ? new Date(result.sessionExpiresAt) : null;
+      licenseValidated = true;
       localStorage.setItem(TOKEN_STORAGE_KEY, token);
 
-      // TODO: Decrypt and store the paid SNP list
-      // paidSnpList = await decryptSnpList(data.encryptedSnpList, data.iv, token);
+      // Build success message based on state
+      let successMsg: string;
+      if (hasActiveSession && sessionExpiresAt) {
+        const hoursLeft = Math.ceil((sessionExpiresAt.getTime() - Date.now()) / (1000 * 60 * 60));
+        successMsg = `License key applied! Session active for ${hoursLeft}h.`;
+      } else if (sessionsRemaining !== null) {
+        successMsg = `License key applied! ${sessionsRemaining} sessions available.`;
+      } else {
+        successMsg = 'License key applied!';
+      }
+      showTokenStatus(successMsg, 'success');
 
-      const sessionMsg = sessionExpiresAt
-        ? 'Session started! Unlimited exports for 24 hours.'
-        : `Token validated! ${sessionsRemaining} sessions remaining.`;
-      showTokenStatus(sessionMsg, 'success');
+      // Cancel any pending timeout to prevent race conditions
+      if (tokenTimeoutId) {
+        clearTimeout(tokenTimeoutId);
+      }
 
       // Update UI after short delay to show success message
-      setTimeout(() => {
+      tokenTimeoutId = setTimeout(() => {
+        tokenTimeoutId = null;
         tokenStatus.hidden = true;
         tokenInput.value = '';
         updateTokenUI();
         updateEstimate();
       }, 1500);
     } else {
-      const errorMsg = data.error === 'exhausted'
-        ? 'This token has no remaining sessions.'
-        : 'Invalid token. Please check and try again.';
+      const errorMsg = result.error === 'exhausted'
+        ? 'This license key has no remaining sessions. Purchase a new key to continue.'
+        : 'Invalid license key. Please check and try again.';
       showTokenStatus(errorMsg, 'error');
     }
   } catch (err) {
-    console.error('Token validation error:', err);
+    console.error('License validation error:', err);
     showTokenStatus('Network error. Please try again.', 'error');
   } finally {
     tokenValidateBtn.disabled = false;
@@ -327,8 +505,13 @@ function clearToken(): void {
   storedToken = null;
   sessionsRemaining = null;
   sessionExpiresAt = null;
+  hasActiveSession = false;
+  licenseValidated = false;
   paidSnpList = null;
   localStorage.removeItem(TOKEN_STORAGE_KEY);
+
+  // Hide purchase success banner if visible
+  purchaseSuccessBanner.hidden = true;
 
   // If currently on a paid preset, switch to demo
   if (PRESET_REQUIRES_TOKEN[currentPreset]) {
@@ -346,12 +529,27 @@ function clearToken(): void {
 // Handle purchase link click
 function handlePurchaseClick(e: Event): void {
   e.preventDefault();
-  // TODO: Redirect to Stripe Checkout
-  // For now, just show coming soon message
-  showTokenStatus('Full Access purchase coming soon!', 'loading');
-  setTimeout(() => {
-    tokenStatus.hidden = true;
-  }, 2000);
+
+  if (!isLemonSqueezyConfigured()) {
+    showTokenStatus('Checkout is being configured. Please try again later.', 'error');
+    return;
+  }
+
+  showTokenStatus('Opening checkout...', 'loading');
+
+  openCheckout({
+    onSuccess: (_orderId, email) => {
+      // License key is generated via webhook and sent to user's email
+      // The email includes a link with ?license_key= that auto-fills the form
+      showTokenStatus(
+        `Payment successful! Your license key has been sent to ${email || 'your email'}. Check your inbox and click the link, or enter the key above.`,
+        'success'
+      );
+    },
+    onClose: () => {
+      tokenStatus.hidden = true;
+    },
+  });
 }
 
 function isValidFormat(value: string): value is OutputFormat {
@@ -376,9 +574,12 @@ function setPresetRadio(preset: CategoryPreset): void {
   }
 }
 
-// Generate category checkboxes dynamically using DOM APIs (safer than innerHTML)
+// Generate category checkboxes dynamically using DOM APIs
 function generateCategoryCheckboxes(): void {
-  categoryCheckboxes.innerHTML = '';
+  // Clear existing children using DOM API consistently
+  while (categoryCheckboxes.firstChild) {
+    categoryCheckboxes.removeChild(categoryCheckboxes.firstChild);
+  }
 
   for (const category of ALL_CATEGORIES) {
     const labelInfo = CATEGORY_LABELS[category];
@@ -473,7 +674,11 @@ function showPreview(parseResult: ParseResult): void {
 function updateEstimate(): void {
   if (!currentParseResult || !snpList) return;
 
-  const estimate = estimateMatches(currentParseResult, snpList, selectedCategories);
+  // Use paid SNP list for estimate if paid preset selected and list is available
+  const listToUse =
+    PRESET_REQUIRES_TOKEN[currentPreset] && paidSnpList ? paidSnpList : snpList;
+
+  const estimate = estimateMatches(currentParseResult, listToUse, selectedCategories);
   estimateCount.textContent = estimate.total.toString();
 }
 
@@ -618,26 +823,81 @@ function parseAndShowPreview(content: string): void {
   }
 }
 
+// Fetch the paid SNP list using validate-token (consumes a session if starting new one)
+async function fetchPaidSnpList(): Promise<boolean> {
+  if (!storedToken) {
+    return false;
+  }
+
+  try {
+    showStatus('Starting session and loading SNP data...');
+
+    const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: storedToken }),
+    });
+
+    if (!response.ok) {
+      console.error('Validate token HTTP error:', response.status);
+      showError('Network error. Please try again.');
+      return false;
+    }
+
+    const data = await response.json();
+
+    if (data.valid && data.encryptedSnpList && data.iv) {
+      // Update session state
+      sessionsRemaining = data.sessionsRemaining ?? null;
+      sessionExpiresAt = data.sessionExpiresAt ? new Date(data.sessionExpiresAt) : null;
+      hasActiveSession = true;
+
+      // Decrypt and cache the SNP list
+      paidSnpList = await decryptSnpList(data.encryptedSnpList, data.iv, storedToken);
+      updateTokenUI();
+      return true;
+    } else {
+      const errorMsg = data.error === 'exhausted'
+        ? 'This license key has no remaining sessions.'
+        : 'Failed to load SNP data. Please try again.';
+      showError(errorMsg);
+      return false;
+    }
+  } catch (err) {
+    console.error('Failed to fetch paid SNP list:', err);
+    showError('Network error. Please try again.');
+    return false;
+  }
+}
+
 // Perform extraction with selected categories (Step 2)
-function performExtraction(): void {
+async function performExtraction(): Promise<void> {
   if (!currentParseResult || !snpList) {
     showError('No file loaded. Please upload a genome file first.');
     return;
   }
 
-  // Check if paid tier is selected without a valid token
-  if (PRESET_REQUIRES_TOKEN[currentPreset] && !storedToken) {
-    showError('Please enter a valid token for Full Access reports.');
-    return;
+  // Check if paid tier is selected
+  if (PRESET_REQUIRES_TOKEN[currentPreset]) {
+    if (!storedToken || !licenseValidated) {
+      showError('Please enter a valid license key for Full Access reports.');
+      return;
+    }
+
+    // If we don't have the cached SNP list yet, fetch it (this consumes a session)
+    if (!paidSnpList) {
+      const success = await fetchPaidSnpList();
+      if (!success) {
+        return;
+      }
+    }
   }
 
   try {
     showStatus('Extracting variants...');
 
     // Use paid SNP list if available and paid tier selected, otherwise free list
-    const listToUse = (PRESET_REQUIRES_TOKEN[currentPreset] && paidSnpList)
-      ? paidSnpList
-      : snpList;
+    const listToUse = PRESET_REQUIRES_TOKEN[currentPreset] && paidSnpList ? paidSnpList : snpList;
 
     // Extract matching variants with category filter
     const extractionResult = extractVariants(currentParseResult, listToUse, selectedCategories);

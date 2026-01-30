@@ -129,17 +129,10 @@ export function estimateMatches(
   const lookup = genomeLookup ?? createGenomeLookup(parseResult.variants);
   const categories = categoryFilter ?? ALL_CATEGORIES;
 
-  // Initialize counts for all categories
-  const byCategory: Record<SNPCategory, number> = {
-    methylation: 0,
-    detoxification: 0,
-    cardiovascular: 0,
-    pharmacogenomics: 0,
-    neurotransmitters: 0,
-    immune: 0,
-    nutrition: 0,
-    other: 0,
-  };
+  // Initialize counts for all categories dynamically from ALL_CATEGORIES
+  const byCategory = Object.fromEntries(
+    ALL_CATEGORIES.map((cat) => [cat, 0])
+  ) as Record<SNPCategory, number>;
 
   for (const snpEntry of snpList.variants) {
     // Skip if category not in filter

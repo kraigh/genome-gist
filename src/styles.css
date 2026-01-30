@@ -972,6 +972,59 @@ section li::marker {
   color: var(--color-text-secondary);
 }
 
+/* Success banner (purchase/license key applied) */
+.success-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.success-banner-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--color-success);
+}
+
+.success-banner-content {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.success-banner-content strong {
+  display: block;
+  color: var(--color-success);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.success-banner-content span {
+  color: var(--color-text-secondary);
+}
+
+.success-banner-dismiss {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.success-banner-dismiss:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-text-secondary);
+}
+
 /* Category details expandable */
 .category-details {
   margin-top: var(--spacing-md);

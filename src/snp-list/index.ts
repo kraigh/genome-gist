@@ -2,4 +2,4 @@
  * SNP List module - main entry point
  */
 
-export { loadFreeSNPList } from './loader';
+export { loadFreeSNPList, validateSNPList } from './loader';

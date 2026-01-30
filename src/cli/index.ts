@@ -100,14 +100,17 @@ function parseArgs(args: string[]): CLIOptions {
   return options;
 }
 
-const DEV_TOOL_NOTICE = `NOTE: This is a development/testing tool that uses the free SNP list only (~${18} variants).
+function getDevToolNotice(variantCount?: number): string {
+  const count = variantCount ? `~${variantCount}` : 'limited';
+  return `NOTE: This is a development/testing tool that uses the free SNP list only (${count} variants).
       The full GenomeGist service includes 1,000+ curated variants.`;
+}
 
 function printHelp(): void {
   console.log(`
 ${TOOL_NAME} CLI v${VERSION}
 
-${DEV_TOOL_NOTICE}
+${getDevToolNotice()}
 
 Extract clinically relevant SNPs from genome files.
 
@@ -160,13 +163,13 @@ async function main(): Promise<void> {
   const { genomePath, format, categories, outputPath, asJson, quiet } = options;
 
   try {
-    // Show dev tool notice
-    log(`\n${DEV_TOOL_NOTICE}\n`, quiet);
-
     // Load SNP list
     log(`Loading SNP list...`, quiet);
     const snpList = await loadFreeSNPListFromFS(PROJECT_ROOT);
     log(`Loaded SNP list v${snpList.version} with ${snpList.count} variants`, quiet);
+
+    // Show dev tool notice with actual variant count
+    log(`\n${getDevToolNotice(snpList.count)}\n`, quiet);
 
     // Read genome file
     log(`Reading genome file: ${genomePath}`, quiet);

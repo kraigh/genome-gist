@@ -121,9 +121,9 @@ function parseDataLine(line: string): GenomeVariant | null {
     return null;
   }
 
-  // Parse position
+  // Parse position (genomic coordinates are 1-based, so 0 is invalid)
   const position = parseInt(positionStr ?? '', 10);
-  if (isNaN(position) || position < 0) {
+  if (isNaN(position) || position <= 0) {
     return null;
   }
 

@@ -3,17 +3,19 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { detectFormat } from '../src/parser/detector';
 import { parse23andMe } from '../src/parser/23andme';
 import { parseGenomeFile } from '../src/parser';
 
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 // Load test fixture
-const sampleFile = readFileSync(
-  join(__dirname, 'fixtures/sample-23andme.txt'),
-  'utf-8'
-);
+const sampleFile = readFileSync(join(__dirname, 'fixtures/sample-23andme.txt'), 'utf-8');
 
 describe('detectFormat', () => {
   it('detects 23andMe v5 format', () => {
