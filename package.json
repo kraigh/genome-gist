@@ -4,13 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run sync-categories && tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "lint": "eslint src --ignore-pattern src/cli",
     "lint:cli": "tsc --project tsconfig.cli.json --noEmit",
     "format": "prettier --write src",
-    "cli": "tsx src/cli/index.ts"
+    "cli": "tsx src/cli/index.ts",
+    "sync-categories": "sh scripts/sync-categories.sh"
   },
   "keywords": ["genome", "snp", "23andme", "genetics"],
   "author": "",

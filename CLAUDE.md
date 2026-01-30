@@ -353,6 +353,44 @@ The SNP list (from the pipeline repo) defines what fields are available for each
 - `ROADMAP.md` — Current tasks and priorities
 - `public/snp-list-free.json` — Bundled free tier SNP list
 - `data/` — Local development files (gitignored). See `data/README.md`
+- `src/generated/snp-categories.ts` — Auto-generated category types and counts
+
+## Category Generation
+
+SNP categories are auto-generated from the full SNP list in the pipeline repo. The generation script consolidates 17+ granular categories into 8 user-friendly categories.
+
+**To update categories after SNP list changes:**
+
+```bash
+# 1. In genome-gist-pipeline: regenerate categories
+cd ../genome-gist-pipeline
+node scripts/generate-categories.cjs
+
+# 2. In genome-gist: sync to frontend
+cd ../genome-gist
+npm run sync-categories
+```
+
+**Automatic sync:** Categories are synced during `npm run build`, so CI/CD builds always use the latest categories if the pipeline repo is available.
+
+**Files involved:**
+- `genome-gist-pipeline/scripts/generate-categories.cjs` — Generation script (source of truth)
+- `genome-gist-pipeline/output/snp-categories.ts` — Generated TypeScript output
+- `genome-gist/scripts/sync-categories.sh` — Copies from pipeline to frontend
+- `genome-gist/src/generated/snp-categories.ts` — Frontend's copy (committed)
+
+**Category consolidation mapping:**
+| Source Categories | → Consolidated |
+|-------------------|----------------|
+| lipids | lipids |
+| detox_phase1, detox_phase2 | detoxification |
+| drug_metabolism | drug_metabolism |
+| vitamin_d, vitamin_a, vitamin_b12, iron | vitamins_minerals |
+| cardiovascular, inflammation | cardiovascular |
+| hormones, neurotransmitter | hormones_neurotransmitters |
+| methylation | methylation |
+| celiac, histamine, lactose, alcohol | food_sensitivities |
+| uncategorized | uncategorized |
 
 ## Notes
 
@@ -370,3 +408,4 @@ The SNP list (from the pipeline repo) defines what fields are available for each
 | 2025-01-23 | Token format: `gg_<random>` | Opaque tokens stored in backend KV, supports use-counting and revocation |
 | 2025-01-23 | API at api.genomegist.com | Separate subdomain for Worker API |
 | 2025-01-25 | Token-derived encryption for SNP list | Prevents casual theft from dev tools; decrypt using SHA-256(token) as AES-GCM key |
+| 2025-01-30 | Category generation moved to pipeline repo | Categories derive from SNP list; generate once in pipeline, copy to frontend via sync script |
