@@ -164,7 +164,7 @@
                       <span class="format-radio"></span>
                       <span class="format-content">
                         <span class="format-name">Detailed</span>
-                        <span class="format-desc">Human-readable with annotations</span>
+                        <span class="format-desc">With annotations · best for large context AI</span>
                       </span>
                     </label>
                     <label class="format-option">
@@ -172,7 +172,7 @@
                       <span class="format-radio"></span>
                       <span class="format-content">
                         <span class="format-name">Compact</span>
-                        <span class="format-desc">AI-optimized, smaller file</span>
+                        <span class="format-desc">No annotations · fits smaller context windows</span>
                       </span>
                     </label>
                     <label class="format-option">
@@ -180,7 +180,7 @@
                       <span class="format-radio"></span>
                       <span class="format-content">
                         <span class="format-name">Minimal</span>
-                        <span class="format-desc">CSV format, smallest size</span>
+                        <span class="format-desc">CSV format · smallest file size</span>
                       </span>
                     </label>
                   </div>
@@ -231,66 +231,148 @@
         </section>
 
         <section class="info-section card">
-          <h2>The Problem</h2>
+          <h2>What is this?</h2>
           <p>
-            Your 23andMe raw data file contains over 600,000 genetic variants. That's too much
-            for any AI to process meaningfully, and most of it is genetic noise — variants with
-            no known significance.
-          </p>
-          <p>
-            Meanwhile, the variants that <em>do</em> matter — the ones linked to how you metabolize
-            drugs, absorb nutrients, or respond to certain foods — are buried in that massive file
-            with no way to find them.
+            GenomeGist extracts clinically relevant genetic variants from your raw DNA file
+            and outputs a compact summary for AI analysis. Your data never leaves your browser.
           </p>
 
-          <h2>The Solution</h2>
-          <p>
-            GenomeGist extracts just the clinically and wellness-relevant variants from your genome
-            file. Instead of 600,000+ rows of data, you get a focused file with the variants that
-            researchers have actually studied and linked to meaningful traits.
-          </p>
-          <p>
-            The output is compact enough to upload to AI assistants like ChatGPT or Claude, where
-            you can ask questions about your specific genetic makeup and get personalized insights.
+          <!-- Visual: Size reduction diagram -->
+          <div class="size-comparison">
+            <div class="size-comparison-item">
+              <div class="size-comparison-icon size-comparison-large">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14 2V8H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="size-comparison-label">Raw genome file</div>
+              <div class="size-comparison-stats">
+                <span class="size-stat-big">600,000+</span> variants
+                <span class="size-stat-secondary">~15–20 MB</span>
+              </div>
+            </div>
+            <div class="size-comparison-arrow">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="size-comparison-item">
+              <div class="size-comparison-icon size-comparison-small">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14 2V8H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M9 15L11 17L15 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="size-comparison-label">Extracted output</div>
+              <div class="size-comparison-stats">
+                <span class="size-stat-big">600+</span> curated variants
+                <span class="size-stat-secondary">~40–80 KB</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-columns">
+            <div class="info-column">
+              <h3>Why is this useful?</h3>
+              <p>
+                Raw DNA files from 23andMe, AncestryDNA, and similar services contain hundreds
+                of thousands of genetic variants — far too much for AI tools to process meaningfully.
+                Most of it is noise: variants with no known significance.
+              </p>
+              <p>
+                The variants that <em>do</em> matter — drug metabolism, nutrient absorption, disease
+                risk — are buried in there with no easy way to find them. GenomeGist extracts just
+                those, producing a file small enough to upload to ChatGPT, Claude, or other AI assistants.
+              </p>
+            </div>
+            <div class="info-column">
+              <h3>How variants are selected</h3>
+              <p>The variant list is compiled from authoritative databases:</p>
+              <ul class="compact-list">
+                <li><strong>ClinVar</strong> — expert-reviewed clinical variants</li>
+                <li><strong>PharmGKB</strong> — drug-gene interactions</li>
+                <li><strong>GWAS Catalog</strong> — significant trait associations</li>
+              </ul>
+              <p>
+                Plus curated nutrigenomics variants: methylation genes (MTHFR), vitamin metabolism,
+                detox enzymes, and food sensitivity markers.
+              </p>
+            </div>
+          </div>
+
+          <h3>Example output</h3>
+          <p>Here's what a few variants look like in the extracted file:</p>
+
+          <div class="output-tabs">
+            <div class="output-tab-buttons">
+              <button class="output-tab-btn active" data-tab="detailed">Detailed</button>
+              <button class="output-tab-btn" data-tab="compact">Compact</button>
+              <button class="output-tab-btn" data-tab="minimal">Minimal</button>
+            </div>
+
+            <pre class="output-example output-tab-content active" data-tab="detailed"><code>- rsid: rs1801133
+  gene: MTHFR
+  genotype: CT
+  category: methylation
+  annotation: "C677T variant. The T allele is associated with reduced
+              enzyme activity affecting folate metabolism."
+
+- rsid: rs4680
+  gene: COMT
+  genotype: AG
+  category: hormones_neurotransmitters
+  annotation: "Val158Met variant. The A allele (Met) is associated
+              with slower dopamine clearance."
+
+- rsid: rs762551
+  gene: CYP1A2
+  genotype: AC
+  category: detoxification
+  annotation: "Caffeine metabolism variant. The C allele is associated
+              with slower caffeine clearance."</code></pre>
+
+            <pre class="output-example output-tab-content" data-tab="compact"><code>metadata:
+  tool: GenomeGist
+  version: "1.0"
+  date: "2025-01-30"
+  format: 23andme-v5
+  disclaimer: For research/educational use only. Not medical advice.
+variants:
+  - rsid: rs1801133
+    gene: MTHFR
+    genotype: CT
+  - rsid: rs4680
+    gene: COMT
+    genotype: AG
+  - rsid: rs762551
+    gene: CYP1A2
+    genotype: AC</code></pre>
+
+            <pre class="output-example output-tab-content" data-tab="minimal"><code># GenomeGist v1.0 | 2025-01-30 | For research/educational use only. Not medical advice.
+# rsid,gene,genotype
+rs1801133,MTHFR,CT
+rs4680,COMT,AG
+rs762551,CYP1A2,AC
+rs1799971,OPRM1,AA
+rs12248560,CYP2C19,CC</code></pre>
+          </div>
+
+          <p class="output-format-note">
+            <strong>Detailed</strong> (~100 KB) includes annotations that help AI understand each variant —
+            works well with models that have large context windows (Claude, GPT-4, Gemini).
+            <strong>Compact</strong> (~20 KB) omits annotations but fits easily in smaller context windows
+            or free-tier AI tools. <strong>Minimal</strong> (~12 KB) is the most dense format.
           </p>
 
-          <h3>What are SNPs?</h3>
-          <p>
-            SNPs (single nucleotide polymorphisms, pronounced "snips") are small genetic variations
-            that make you unique. Some SNPs affect how you process nutrients, respond to medications,
-            or predispose you to certain health conditions. Most have no known effect.
-          </p>
-
-          <h3>How are relevant SNPs identified?</h3>
-          <p>
-            The SNP list used by GenomeGist is compiled from authoritative public databases:
-          </p>
-          <ul>
-            <li><strong>ClinVar</strong> — NCBI's database of clinically significant variants, filtered to only include variants reviewed by expert panels</li>
-            <li><strong>PharmGKB</strong> — Pharmacogenomics variants with high-evidence drug-gene interactions</li>
-            <li><strong>GWAS Catalog</strong> — Genome-wide association study results, filtered to only the most statistically significant findings from large studies</li>
-          </ul>
-          <p>
-            These are supplemented with a curated set of well-studied nutrigenomics and wellness
-            variants — things like MTHFR methylation variants, vitamin metabolism genes, and
-            food sensitivity markers that are commonly discussed in functional medicine.
-          </p>
-
-          <h3>What can you do with the output?</h3>
-          <p>
-            Upload the extracted file to an AI assistant and ask questions like:
-          </p>
-          <ul>
+          <h3>What can you do with this?</h3>
+          <p>Upload the file to an AI assistant and ask questions like:</p>
+          <ul class="example-questions">
             <li>"What do my MTHFR variants mean for folate supplementation?"</li>
-            <li>"Based on my CYP2D6 status, how might I metabolize common medications?"</li>
-            <li>"What does my APOE genotype suggest about cardiovascular health?"</li>
-            <li>"Are there any supplements that might be particularly relevant for my genetics?"</li>
+            <li>"Based on my genetics, how might I metabolize caffeine or common medications?"</li>
+            <li>"Are there supplements that might be relevant for my specific genotypes?"</li>
           </ul>
-          <p>
-            The AI can cross-reference your specific genotypes with research literature to provide
-            personalized context — something that wasn't possible before without expensive
-            professional consultations.
-          </p>
         </section>
 
         <section class="categories-section card">
@@ -329,37 +411,37 @@
 
           <div class="category-grid">
             <div class="category-item">
-              <h3>Lipids</h3>
+              <h3>Lipids <span class="category-count">~250 variants</span></h3>
               <p>Cholesterol and fat metabolism, APOE variants, and obesity-related markers.</p>
             </div>
             <div class="category-item">
-              <h3>Detoxification</h3>
+              <h3>Detoxification <span class="category-count">~110 variants</span></h3>
               <p>CYP450 enzymes for toxin processing, including caffeine and environmental
                  compound metabolism.</p>
             </div>
             <div class="category-item">
-              <h3>Vitamins &amp; Minerals</h3>
+              <h3>Vitamins &amp; Minerals <span class="category-count">~80 variants</span></h3>
               <p>Vitamin D, A, B12 metabolism and iron absorption pathways.</p>
             </div>
             <div class="category-item">
-              <h3>Hormones &amp; Mood</h3>
+              <h3>Hormones &amp; Mood <span class="category-count">~45 variants</span></h3>
               <p>COMT, dopamine, serotonin, and hormone-related variants affecting mood
                  and stress response.</p>
             </div>
             <div class="category-item">
-              <h3>Cardiovascular</h3>
+              <h3>Cardiovascular <span class="category-count">~45 variants</span></h3>
               <p>Heart health markers and inflammation-related variants.</p>
             </div>
             <div class="category-item">
-              <h3>Drug Response</h3>
+              <h3>Drug Response <span class="category-count">~45 variants</span></h3>
               <p>CYP2C19, CYP2D6, and other genes affecting how you metabolize medications.</p>
             </div>
             <div class="category-item">
-              <h3>Food Sensitivities</h3>
+              <h3>Food Sensitivities <span class="category-count">~30 variants</span></h3>
               <p>Lactose tolerance, celiac markers, histamine, and alcohol metabolism.</p>
             </div>
             <div class="category-item">
-              <h3>Methylation</h3>
+              <h3>Methylation <span class="category-count">~25 variants</span></h3>
               <p>MTHFR and related genes affecting folate metabolism and homocysteine levels.</p>
             </div>
           </div>
@@ -371,9 +453,9 @@
           <details class="faq-item">
             <summary>How do I get my genome file?</summary>
             <p>
-              If you've done a DNA test with 23andMe, you can download your raw data from their
-              website. Go to Settings &gt; Privacy &gt; Download Your Data. The file will be a .txt
-              file containing your genetic data.
+              If you've done a DNA test with 23andMe, AncestryDNA, or similar services, you can
+              download your raw data from their website. Look for "Download Raw Data" or similar
+              in your account settings. The file will be a .txt file containing your genetic data.
             </p>
           </details>
 
@@ -526,5 +608,19 @@
     </div>
 
     <script type="module" src="/src/main.ts"></script>
+    <script>
+      // Output format tab switching
+      document.querySelectorAll('.output-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tab;
+          // Update buttons
+          document.querySelectorAll('.output-tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          // Update content
+          document.querySelectorAll('.output-tab-content').forEach(c => c.classList.remove('active'));
+          document.querySelector(`.output-tab-content[data-tab="${tab}"]`).classList.add('active');
+        });
+      });
+    </script>
   </body>
 </html>
