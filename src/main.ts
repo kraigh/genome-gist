@@ -5,28 +5,28 @@
 import { parseGenomeFile, formatDisplayName } from './parser';
 import { loadFreeSNPList, validateSNPList } from './snp-list';
 import { extractVariants, estimateMatches } from './extractor';
-import { toYAML, generateFilename, calculateSize } from './output';
+import { toYAML, generateFilename } from './output';
 import type {
   SNPList,
   ExtractionResult,
   OutputFormat,
   ParseResult,
   SNPCategory,
-  CategoryPreset,
+  Tier,
 } from './types';
 import {
   ParseError,
   ALL_CATEGORIES,
-  CATEGORY_PRESETS,
   CATEGORY_LABELS,
-  PRESET_REQUIRES_TOKEN,
+  TIER_REQUIRES_LICENSE,
+  ESTIMATED_CATEGORY_COUNTS,
 } from './types';
 import { VERSION, TOOL_NAME } from './version';
 import { initializeLemonSqueezy, openCheckout, isLemonSqueezyConfigured } from './lemon-squeezy';
 
 // localStorage keys
 const FORMAT_STORAGE_KEY = 'genomegist-output-format';
-const PRESET_STORAGE_KEY = 'genomegist-category-preset';
+const TIER_STORAGE_KEY = 'genomegist-tier';
 const TOKEN_STORAGE_KEY = 'genomegist-token';
 
 // API configuration
@@ -132,33 +132,39 @@ const fileInput = getElement<HTMLInputElement>('file-input');
 const statusDiv = getElement<HTMLDivElement>('status');
 const statusText = getElement<HTMLParagraphElement>('status-text');
 
-// DOM elements - Preview section
-const previewDiv = getElement<HTMLDivElement>('preview');
+// DOM elements - Extraction panel
+const extractionPanel = getElement<HTMLDivElement>('extraction-panel');
 const detectedFormat = getElement<HTMLElement>('detected-format');
 const variantCount = getElement<HTMLElement>('variant-count');
-const estimateCount = getElement<HTMLElement>('estimate-count');
+const changeFileBtn = getElement<HTMLButtonElement>('change-file-btn');
 const categoryCheckboxes = getElement<HTMLDivElement>('category-checkboxes');
-const backBtn = getElement<HTMLButtonElement>('back-btn');
-const extractBtn = getElement<HTMLButtonElement>('extract-btn');
+const categoriesSection = getElement<HTMLDivElement>('categories-section');
 
-// DOM elements - Token section
-const tokenSection = getElement<HTMLDivElement>('token-section');
+// DOM elements - Preview stats and actions
+const previewMatched = getElement<HTMLSpanElement>('preview-matched');
+const previewNocall = getElement<HTMLSpanElement>('preview-nocall');
+const previewMissing = getElement<HTMLSpanElement>('preview-missing');
+const fileSizeSpan = getElement<HTMLSpanElement>('file-size');
+const downloadBtn = getElement<HTMLButtonElement>('download-btn');
+const extractionHint = getElement<HTMLParagraphElement>('extraction-hint');
+
+// DOM elements - License sections
+const licensePurchase = getElement<HTMLDivElement>('license-purchase');
+const purchaseBtn = getElement<HTMLButtonElement>('purchase-btn');
+const manualKeyLink = getElement<HTMLAnchorElement>('manual-key-link');
+const licenseInput = getElement<HTMLDivElement>('license-input');
 const tokenInput = getElement<HTMLInputElement>('token-input');
 const tokenValidateBtn = getElement<HTMLButtonElement>('token-validate-btn');
+const backToPurchaseLink = getElement<HTMLAnchorElement>('back-to-purchase-link');
 const tokenStatus = getElement<HTMLDivElement>('token-status');
-const tokenActive = getElement<HTMLDivElement>('token-active');
+const licenseActive = getElement<HTMLDivElement>('license-active');
 const licenseStatusText = getElement<HTMLSpanElement>('license-status-text');
 const sessionInfo = getElement<HTMLSpanElement>('session-info');
 const tokenClearBtn = getElement<HTMLButtonElement>('token-clear-btn');
-const purchaseLink = getElement<HTMLAnchorElement>('purchase-link');
+
+// DOM elements - Success banner
 const purchaseSuccessBanner = getElement<HTMLDivElement>('purchase-success-banner');
 const dismissSuccessBanner = getElement<HTMLButtonElement>('dismiss-success-banner');
-
-// DOM elements - Results section
-const resultsDiv = getElement<HTMLDivElement>('results');
-const resultsSummary = getElement<HTMLParagraphElement>('results-summary');
-const downloadBtn = getElement<HTMLButtonElement>('download-btn');
-const fileSizeSpan = getElement<HTMLSpanElement>('file-size');
 
 // DOM elements - Error section
 const errorDiv = getElement<HTMLDivElement>('error');
@@ -174,14 +180,15 @@ let snpList: SNPList | null = null;
 let paidSnpList: SNPList | null = null; // Decrypted paid SNP list (kept in closure)
 let currentReader: FileReader | null = null;
 let selectedFormat: OutputFormat = 'detailed';
-let selectedCategories: SNPCategory[] = CATEGORY_PRESETS.demo;
-let currentPreset: CategoryPreset = 'demo';
+let selectedCategories: SNPCategory[] = [...ALL_CATEGORIES];
+let selectedTier: Tier = 'free';
 let storedToken: string | null = null;
 let sessionsRemaining: number | null = null;
 let sessionExpiresAt: Date | null = null;
 let hasActiveSession = false; // Whether there's an active 24h session (from check-license)
 let licenseValidated = false; // Whether license has been validated (without consuming session)
 let tokenTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let showManualInput = false; // Whether to show manual license input vs purchase button
 
 // Initialize
 async function init(): Promise<void> {
@@ -224,14 +231,21 @@ async function init(): Promise<void> {
       licenseValidated = true;
       localStorage.setItem(TOKEN_STORAGE_KEY, urlLicenseKey);
 
+      // Auto-select full tier when license is present
+      selectedTier = 'full';
+      localStorage.setItem(TIER_STORAGE_KEY, selectedTier);
+      setTierRadio(selectedTier);
+
       tokenStatus.hidden = true;
-      updateTokenUI();
+      updateLicenseSectionUI();
+      updateDownloadButtonState();
     } else {
       // Show error for invalid/exhausted license
       const errorMsg = result.error === 'exhausted'
         ? 'This license key has no remaining sessions. Purchase a new key to continue.'
         : 'Invalid license key.';
       showTokenStatus(errorMsg, 'error');
+      showManualInput = true;
       // Hide purchase success banner if license is invalid
       purchaseSuccessBanner.hidden = true;
     }
@@ -240,6 +254,9 @@ async function init(): Promise<void> {
     const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (savedToken) {
       storedToken = savedToken;
+      // Auto-select full tier when license is present
+      selectedTier = 'full';
+      setTierRadio(selectedTier);
       // Validate the stored license key in background
       const tokenBeingValidated = savedToken;
       checkLicense(savedToken).then((result) => {
@@ -251,14 +268,16 @@ async function init(): Promise<void> {
           hasActiveSession = result.hasActiveSession ?? false;
           sessionExpiresAt = result.sessionExpiresAt ? new Date(result.sessionExpiresAt) : null;
           licenseValidated = true;
-          updateTokenUI();
+          updateLicenseSectionUI();
+          updateDownloadButtonState();
         } else {
           // Stored license is no longer valid, clear it
           clearToken();
         }
       });
       // Show as active while we verify
-      updateTokenUI();
+      updateLicenseSectionUI();
+      updateDownloadButtonState();
     }
   }
 
@@ -269,18 +288,16 @@ async function init(): Promise<void> {
     setFormatRadio(savedFormat);
   }
 
-  // Restore category preset preference (but validate token requirement)
-  const savedPreset = localStorage.getItem(PRESET_STORAGE_KEY);
-  if (savedPreset && isValidPreset(savedPreset)) {
-    // If saved preset requires token but no token stored, fall back to demo
-    if (PRESET_REQUIRES_TOKEN[savedPreset] && !storedToken) {
-      currentPreset = 'demo';
-      selectedCategories = CATEGORY_PRESETS.demo;
-      setPresetRadio('demo');
+  // Restore tier preference (but validate token requirement)
+  const savedTier = localStorage.getItem(TIER_STORAGE_KEY);
+  if (savedTier && isValidTier(savedTier)) {
+    // If saved tier requires license but no token stored, fall back to free
+    if (TIER_REQUIRES_LICENSE[savedTier] && !storedToken) {
+      selectedTier = 'free';
+      setTierRadio('free');
     } else {
-      currentPreset = savedPreset;
-      selectedCategories = CATEGORY_PRESETS[savedPreset];
-      setPresetRadio(savedPreset);
+      selectedTier = savedTier;
+      setTierRadio(savedTier);
     }
   }
 
@@ -291,22 +308,22 @@ async function init(): Promise<void> {
       if (isValidFormat(input.value)) {
         selectedFormat = input.value;
         localStorage.setItem(FORMAT_STORAGE_KEY, selectedFormat);
-        updateOutputPreview();
+        updateExtractionPreview();
       }
     });
   });
 
-  // Set up preset change listeners
-  const presetInputs = document.querySelectorAll<HTMLInputElement>('input[name="category-preset"]');
-  presetInputs.forEach((input) => {
+  // Set up tier change listeners
+  const tierInputs = document.querySelectorAll<HTMLInputElement>('input[name="tier"]');
+  tierInputs.forEach((input) => {
     input.addEventListener('change', () => {
-      if (isValidPreset(input.value)) {
-        handlePresetChange(input.value);
+      if (isValidTier(input.value)) {
+        handleTierChange(input.value);
       }
     });
   });
 
-  // Set up token event listeners
+  // Set up license section event listeners
   tokenValidateBtn.addEventListener('click', handleTokenValidation);
   tokenInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -314,13 +331,30 @@ async function init(): Promise<void> {
     }
   });
   tokenClearBtn.addEventListener('click', clearToken);
-  purchaseLink.addEventListener('click', handlePurchaseClick);
+  purchaseBtn.addEventListener('click', handlePurchaseClick);
+  manualKeyLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    showManualInput = true;
+    updateLicenseSectionUI();
+    tokenInput.focus();
+  });
+  backToPurchaseLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    showManualInput = false;
+    updateLicenseSectionUI();
+  });
 
   // Generate category checkboxes
   generateCategoryCheckboxes();
 
-  // Update token section visibility based on initial preset
-  updateTokenSectionVisibility();
+  // Update license section visibility based on initial state
+  updateLicenseSectionUI();
+
+  // Set up Buy Now buttons on the page
+  const buyNowButtons = document.querySelectorAll<HTMLButtonElement>('[data-action="buy"]');
+  buyNowButtons.forEach((btn) => {
+    btn.addEventListener('click', handlePurchaseClick);
+  });
 
   try {
     showStatus('Loading SNP list...');
@@ -340,88 +374,74 @@ async function init(): Promise<void> {
   });
 }
 
-// Handle preset selection changes
-function handlePresetChange(preset: CategoryPreset): void {
-  const requiresToken = PRESET_REQUIRES_TOKEN[preset];
+// Handle tier selection changes
+function handleTierChange(tier: Tier): void {
+  selectedTier = tier;
+  localStorage.setItem(TIER_STORAGE_KEY, selectedTier);
+  updateLicenseSectionUI();
+  updateDownloadButtonState();
+  updateCategoryCounts();
+  updateExtractionPreview();
+}
 
-  // If requires token and no valid token, show token section
-  if (requiresToken && !storedToken) {
-    // Still update the preset selection visually
-    currentPreset = preset;
-    selectedCategories = CATEGORY_PRESETS[preset];
-    localStorage.setItem(PRESET_STORAGE_KEY, currentPreset);
-    updateCategoryCheckboxes();
-    updateTokenSectionVisibility();
-    // Don't update estimate yet - they need to enter a token
-    // Show estimate based on what they'd get with the paid tier
-    updateEstimate();
+// Update license section visibility based on current state
+function updateLicenseSectionUI(): void {
+  const requiresLicense = TIER_REQUIRES_LICENSE[selectedTier];
+
+  // Hide all license sections first
+  licensePurchase.hidden = true;
+  licenseInput.hidden = true;
+  licenseActive.hidden = true;
+  categoriesSection.hidden = selectedTier === 'free'; // Hide categories for free tier
+
+  if (!requiresLicense) {
+    // Free tier - no license section needed
     return;
   }
 
-  currentPreset = preset;
-  selectedCategories = CATEGORY_PRESETS[preset];
-  localStorage.setItem(PRESET_STORAGE_KEY, currentPreset);
-  updateCategoryCheckboxes();
-  updateTokenSectionVisibility();
-  updateEstimate();
-}
-
-// Update token section visibility based on current state
-function updateTokenSectionVisibility(): void {
-  const requiresToken = PRESET_REQUIRES_TOKEN[currentPreset];
-
   if (storedToken && licenseValidated) {
-    // License key is stored and validated - show status badge
-    tokenSection.hidden = true;
-    tokenActive.hidden = false;
+    // License key is stored and validated - show active badge
+    licenseActive.hidden = false;
 
     // Update status text and session info based on state
     if (hasActiveSession && sessionExpiresAt) {
       const now = new Date();
       if (sessionExpiresAt > now) {
         const hoursLeft = Math.ceil((sessionExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
-        licenseStatusText.textContent = 'Session active';
-        sessionInfo.textContent = `· Unlimited exports for ${hoursLeft}h`;
+        licenseStatusText.textContent = 'Full Access Unlocked';
+        sessionInfo.textContent = `Unlimited exports for ${hoursLeft} more hours`;
       } else {
         // Session expired, but license still valid
-        licenseStatusText.textContent = 'License key applied';
-        sessionInfo.textContent = sessionsRemaining !== null ? `· ${sessionsRemaining} sessions available` : '';
+        licenseStatusText.textContent = 'Full Access Unlocked';
+        sessionInfo.textContent = sessionsRemaining !== null ? `${sessionsRemaining} sessions available` : '';
       }
     } else if (paidSnpList) {
       // Have SNP list cached (session started during this page load)
-      licenseStatusText.textContent = 'Session active';
+      licenseStatusText.textContent = 'Full Access Unlocked';
       if (sessionExpiresAt) {
         const now = new Date();
         const hoursLeft = Math.ceil((sessionExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));
-        sessionInfo.textContent = `· Unlimited exports for ${hoursLeft}h`;
+        sessionInfo.textContent = `Unlimited exports for ${hoursLeft} more hours`;
       } else {
         sessionInfo.textContent = '';
       }
     } else {
       // License validated but no active session yet
-      licenseStatusText.textContent = 'License key applied';
-      sessionInfo.textContent = sessionsRemaining !== null ? `· ${sessionsRemaining} sessions available` : '';
+      licenseStatusText.textContent = 'Full Access Unlocked';
+      sessionInfo.textContent = sessionsRemaining !== null ? `${sessionsRemaining} sessions available` : '';
     }
   } else if (storedToken) {
-    // Token stored but not yet validated - show as pending
-    tokenSection.hidden = true;
-    tokenActive.hidden = false;
+    // Token stored but not yet validated - show as pending in active section
+    licenseActive.hidden = false;
     licenseStatusText.textContent = 'Verifying license...';
     sessionInfo.textContent = '';
-  } else if (requiresToken) {
-    // Paid tier selected but no token - show input section
-    tokenSection.hidden = false;
-    tokenActive.hidden = true;
+  } else if (showManualInput) {
+    // Show manual input section
+    licenseInput.hidden = false;
   } else {
-    // Free tier - hide both
-    tokenSection.hidden = true;
-    tokenActive.hidden = true;
+    // Show purchase CTA
+    licensePurchase.hidden = false;
   }
-}
-
-// Update token UI state
-function updateTokenUI(): void {
-  updateTokenSectionVisibility();
 }
 
 // Handle token validation (uses check-license, does NOT consume a session)
@@ -452,6 +472,7 @@ async function handleTokenValidation(): Promise<void> {
       hasActiveSession = result.hasActiveSession ?? false;
       sessionExpiresAt = result.sessionExpiresAt ? new Date(result.sessionExpiresAt) : null;
       licenseValidated = true;
+      showManualInput = false;
       localStorage.setItem(TOKEN_STORAGE_KEY, token);
 
       // Build success message based on state
@@ -476,8 +497,8 @@ async function handleTokenValidation(): Promise<void> {
         tokenTimeoutId = null;
         tokenStatus.hidden = true;
         tokenInput.value = '';
-        updateTokenUI();
-        updateEstimate();
+        updateLicenseSectionUI();
+        updateExtractionPreview();
       }, 1500);
     } else {
       const errorMsg = result.error === 'exhausted'
@@ -508,46 +529,47 @@ function clearToken(): void {
   hasActiveSession = false;
   licenseValidated = false;
   paidSnpList = null;
+  showManualInput = false;
   localStorage.removeItem(TOKEN_STORAGE_KEY);
 
   // Hide purchase success banner if visible
   purchaseSuccessBanner.hidden = true;
 
-  // If currently on a paid preset, switch to demo
-  if (PRESET_REQUIRES_TOKEN[currentPreset]) {
-    currentPreset = 'demo';
-    selectedCategories = CATEGORY_PRESETS.demo;
-    localStorage.setItem(PRESET_STORAGE_KEY, currentPreset);
-    setPresetRadio('demo');
-    updateCategoryCheckboxes();
+  // If currently on full tier, switch to free
+  if (TIER_REQUIRES_LICENSE[selectedTier]) {
+    selectedTier = 'free';
+    localStorage.setItem(TIER_STORAGE_KEY, selectedTier);
+    setTierRadio('free');
   }
 
-  updateTokenUI();
-  updateEstimate();
+  updateLicenseSectionUI();
+  updateExtractionPreview();
 }
 
-// Handle purchase link click
+// Handle purchase button click
 function handlePurchaseClick(e: Event): void {
   e.preventDefault();
 
   if (!isLemonSqueezyConfigured()) {
-    showTokenStatus('Checkout is being configured. Please try again later.', 'error');
+    showManualInput = true;
+    updateLicenseSectionUI();
+    showTokenStatus('Checkout is being configured. Please enter your license key manually.', 'error');
     return;
   }
-
-  showTokenStatus('Opening checkout...', 'loading');
 
   openCheckout({
     onSuccess: (_orderId, email) => {
       // License key is generated via webhook and sent to user's email
       // The email includes a link with ?license_key= that auto-fills the form
+      showManualInput = true;
+      updateLicenseSectionUI();
       showTokenStatus(
-        `Payment successful! Your license key has been sent to ${email || 'your email'}. Check your inbox and click the link, or enter the key above.`,
+        `Payment successful! Your license key has been sent to ${email || 'your email'}. Check your inbox and click the link, or enter the key below.`,
         'success'
       );
     },
     onClose: () => {
-      tokenStatus.hidden = true;
+      // Checkout closed without completing - no action needed
     },
   });
 }
@@ -556,8 +578,8 @@ function isValidFormat(value: string): value is OutputFormat {
   return value === 'detailed' || value === 'compact' || value === 'minimal';
 }
 
-function isValidPreset(value: string): value is CategoryPreset {
-  return value === 'demo' || value === 'wellness' || value === 'full';
+function isValidTier(value: string): value is Tier {
+  return value === 'free' || value === 'full';
 }
 
 function setFormatRadio(format: OutputFormat): void {
@@ -567,14 +589,14 @@ function setFormatRadio(format: OutputFormat): void {
   }
 }
 
-function setPresetRadio(preset: CategoryPreset): void {
-  const input = document.querySelector<HTMLInputElement>(`input[name="category-preset"][value="${preset}"]`);
+function setTierRadio(tier: Tier): void {
+  const input = document.querySelector<HTMLInputElement>(`input[name="tier"][value="${tier}"]`);
   if (input) {
     input.checked = true;
   }
 }
 
-// Generate category checkboxes dynamically using DOM APIs
+// Generate category toggles dynamically using DOM APIs
 function generateCategoryCheckboxes(): void {
   // Clear existing children using DOM API consistently
   while (categoryCheckboxes.firstChild) {
@@ -586,7 +608,8 @@ function generateCategoryCheckboxes(): void {
     const isChecked = selectedCategories.includes(category);
 
     const wrapper = document.createElement('label');
-    wrapper.className = 'category-checkbox';
+    wrapper.className = `category-toggle${isChecked ? ' active' : ''}`;
+    wrapper.dataset.category = category;
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -594,26 +617,42 @@ function generateCategoryCheckboxes(): void {
     checkbox.checked = isChecked;
     checkbox.addEventListener('change', handleCategoryCheckboxChange);
 
-    const labelSpan = document.createElement('span');
-    labelSpan.className = 'category-checkbox-label';
+    const contentSpan = document.createElement('span');
+    contentSpan.className = 'category-toggle-content';
 
     const nameSpan = document.createElement('span');
-    nameSpan.className = 'category-checkbox-name';
+    nameSpan.className = 'category-toggle-name';
     nameSpan.textContent = labelInfo.name;
 
-    const descSpan = document.createElement('span');
-    descSpan.className = 'category-checkbox-desc';
-    descSpan.textContent = labelInfo.description;
+    // Add count span (will be updated when file is loaded)
+    const countSpan = document.createElement('span');
+    countSpan.className = 'category-toggle-count';
+    countSpan.dataset.categoryCount = category;
+    countSpan.textContent = '—';
 
-    labelSpan.appendChild(nameSpan);
-    labelSpan.appendChild(descSpan);
+    contentSpan.appendChild(nameSpan);
+    contentSpan.appendChild(countSpan);
+
+    // Toggle switch
+    const switchSpan = document.createElement('span');
+    switchSpan.className = 'category-toggle-switch';
+
     wrapper.appendChild(checkbox);
-    wrapper.appendChild(labelSpan);
+    wrapper.appendChild(contentSpan);
+    wrapper.appendChild(switchSpan);
     categoryCheckboxes.appendChild(wrapper);
   }
 }
 
-function handleCategoryCheckboxChange(): void {
+function handleCategoryCheckboxChange(e: Event): void {
+  const checkbox = e.target as HTMLInputElement;
+  const wrapper = checkbox.closest('.category-toggle');
+
+  // Update wrapper active class
+  if (wrapper) {
+    wrapper.classList.toggle('active', checkbox.checked);
+  }
+
   // Gather all checked categories
   const checkboxes = categoryCheckboxes.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
   selectedCategories = [];
@@ -624,28 +663,14 @@ function handleCategoryCheckboxChange(): void {
     }
   });
 
-  // Clear preset radio (custom selection)
-  const presetInputs = document.querySelectorAll<HTMLInputElement>('input[name="category-preset"]');
-  presetInputs.forEach((input) => {
-    input.checked = false;
-  });
-
-  updateEstimate();
-}
-
-function updateCategoryCheckboxes(): void {
-  const checkboxes = categoryCheckboxes.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
-  checkboxes.forEach((cb) => {
-    cb.checked = selectedCategories.includes(cb.value as SNPCategory);
-  });
+  updateExtractionPreview();
 }
 
 // UI Helpers
 function showStatus(message: string): void {
   statusDiv.hidden = false;
   statusText.textContent = message;
-  previewDiv.hidden = true;
-  resultsDiv.hidden = true;
+  extractionPanel.hidden = true;
   errorDiv.hidden = true;
 }
 
@@ -653,10 +678,9 @@ function hideStatus(): void {
   statusDiv.hidden = true;
 }
 
-function showPreview(parseResult: ParseResult): void {
+function showExtractionPanel(parseResult: ParseResult): void {
   statusDiv.hidden = true;
-  previewDiv.hidden = false;
-  resultsDiv.hidden = true;
+  extractionPanel.hidden = false;
   errorDiv.hidden = true;
   uploadZone.hidden = true;
 
@@ -666,62 +690,167 @@ function showPreview(parseResult: ParseResult): void {
   detectedFormat.textContent = formatDisplayName(parseResult.format);
   variantCount.textContent = parseResult.variants.length.toLocaleString();
 
-  // Update token section visibility and estimate
-  updateTokenSectionVisibility();
-  updateEstimate();
+  // Update license section, button state, and extraction preview
+  updateLicenseSectionUI();
+  updateDownloadButtonState();
+  updateCategoryCounts();
+  updateExtractionPreview();
 }
 
-function updateEstimate(): void {
-  if (!currentParseResult || !snpList) return;
-
-  // Use paid SNP list for estimate if paid preset selected and list is available
-  const listToUse =
-    PRESET_REQUIRES_TOKEN[currentPreset] && paidSnpList ? paidSnpList : snpList;
-
-  const estimate = estimateMatches(currentParseResult, listToUse, selectedCategories);
-  estimateCount.textContent = estimate.total.toString();
-}
-
-function showResults(result: ExtractionResult): void {
-  statusDiv.hidden = true;
-  previewDiv.hidden = true;
-  resultsDiv.hidden = false;
-  errorDiv.hidden = true;
-
-  currentResult = result;
-
-  const { found, noCall, missing, total } = result.summary;
-  const format = formatDisplayName(result.metadata.sourceFormat);
-
-  let summaryText = `Found ${found} of ${total} variants`;
-  if (noCall > 0) {
-    summaryText += ` (${noCall} no-call)`;
+// Format count for display (e.g., "~50", "~1k", "~10k")
+function formatEstimatedCount(count: number): string {
+  if (count >= 10000) {
+    return `~${Math.round(count / 1000)}k`;
+  } else if (count >= 1000) {
+    return `~${(count / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+  } else {
+    return `~${count}`;
   }
-  if (missing > 0) {
-    summaryText += `, ${missing} not in file`;
-  }
-  summaryText += `. Source: ${format}.`;
-
-  resultsSummary.textContent = summaryText;
-
-  // Update file size display
-  updateOutputPreview();
 }
 
-function updateOutputPreview(): void {
-  if (!currentResult) return;
+// Update category toggle counts based on parsed file
+function updateCategoryCounts(): void {
+  // Get list to use for counting
+  // For full tier: use paid list if available, otherwise show estimates
+  // For free tier: use free list
+  const isPaidTier = TIER_REQUIRES_LICENSE[selectedTier];
+  const listToUse = isPaidTier ? paidSnpList : snpList;
 
-  const output = toYAML(currentResult, selectedFormat);
-  const fileSize = calculateSize(output);
+  // Count matches by category if we have both a file and a list
+  const countByCategory: Record<string, number> = {};
+  if (currentParseResult && listToUse) {
+    const rsidSet = new Set(currentParseResult.variants.map((v) => v.rsid));
+    for (const entry of listToUse.variants) {
+      if (rsidSet.has(entry.rsid)) {
+        countByCategory[entry.category] = (countByCategory[entry.category] || 0) + 1;
+      }
+    }
+  }
 
-  fileSizeSpan.textContent = fileSize;
-  downloadBtn.textContent = 'Download Results';
+  // Update count spans
+  for (const category of ALL_CATEGORIES) {
+    const countSpan = document.querySelector<HTMLSpanElement>(`[data-category-count="${category}"]`);
+    if (countSpan) {
+      if (!currentParseResult) {
+        // No file loaded - show dash
+        countSpan.textContent = '—';
+      } else if (isPaidTier && !paidSnpList) {
+        // Paid tier but no SNP list yet - show estimates
+        const estimate = ESTIMATED_CATEGORY_COUNTS[category as SNPCategory] || 0;
+        countSpan.textContent = formatEstimatedCount(estimate);
+      } else {
+        // Have actual counts
+        const count = countByCategory[category] || 0;
+        countSpan.textContent = count.toString();
+      }
+    }
+  }
+}
+
+// Update the extraction preview (stats and file size estimate)
+function updateExtractionPreview(): void {
+  if (!currentParseResult || !snpList) {
+    // No file loaded yet, show placeholder
+    previewMatched.textContent = '—';
+    previewNocall.textContent = '—';
+    previewMissing.textContent = '—';
+    fileSizeSpan.textContent = '—';
+    return;
+  }
+
+  const isPaidTier = TIER_REQUIRES_LICENSE[selectedTier];
+
+  // If paid tier but no SNP list yet, show estimates
+  if (isPaidTier && !paidSnpList) {
+    // Calculate estimated total from selected categories
+    let estimatedTotal = 0;
+    for (const category of selectedCategories) {
+      estimatedTotal += ESTIMATED_CATEGORY_COUNTS[category] || 0;
+    }
+
+    previewMatched.textContent = formatEstimatedCount(estimatedTotal);
+    previewNocall.textContent = '—';
+    previewMissing.textContent = '—';
+
+    // Estimate file size
+    let estimatedBytes: number;
+    switch (selectedFormat) {
+      case 'detailed':
+        estimatedBytes = estimatedTotal * 180 + 500;
+        break;
+      case 'compact':
+        estimatedBytes = estimatedTotal * 35 + 200;
+        break;
+      case 'minimal':
+        estimatedBytes = estimatedTotal * 20 + 100;
+        break;
+    }
+    fileSizeSpan.textContent = `~${formatBytes(estimatedBytes)}`;
+    return;
+  }
+
+  // Use paid SNP list if full tier selected and list is available
+  const listToUse = isPaidTier && paidSnpList ? paidSnpList : snpList;
+
+  // Get categories to use (all categories for full tier, free list is already limited)
+  const categoriesToUse = selectedTier === 'full' ? selectedCategories : ALL_CATEGORIES;
+
+  // Get estimate
+  const estimate = estimateMatches(currentParseResult, listToUse, categoriesToUse);
+
+  // Update preview stats
+  previewMatched.textContent = estimate.total.toString();
+
+  // For no-call and missing, we need to do a rough calculation
+  // No-call: variants that are in the file but have "--" genotype
+  // Missing: variants in SNP list but not in file
+  const rsidSet = new Set(currentParseResult.variants.map((v) => v.rsid));
+  const noCallSet = new Set(
+    currentParseResult.variants.filter((v) => v.genotype === '--').map((v) => v.rsid)
+  );
+
+  let noCallCount = 0;
+  let missingCount = 0;
+  for (const entry of listToUse.variants) {
+    if (!categoriesToUse.includes(entry.category)) continue;
+    if (!rsidSet.has(entry.rsid)) {
+      missingCount++;
+    } else if (noCallSet.has(entry.rsid)) {
+      noCallCount++;
+    }
+  }
+
+  previewNocall.textContent = noCallCount.toString();
+  previewMissing.textContent = missingCount.toString();
+
+  // Estimate file size based on format and variant count
+  // This is a rough estimate; actual size calculated on download
+  const variantCount = estimate.total;
+  let estimatedBytes: number;
+  switch (selectedFormat) {
+    case 'detailed':
+      estimatedBytes = variantCount * 180 + 500; // ~180 bytes per variant + metadata
+      break;
+    case 'compact':
+      estimatedBytes = variantCount * 35 + 200;
+      break;
+    case 'minimal':
+      estimatedBytes = variantCount * 20 + 100;
+      break;
+  }
+
+  fileSizeSpan.textContent = formatBytes(estimatedBytes);
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function showError(message: string): void {
   statusDiv.hidden = true;
-  previewDiv.hidden = true;
-  resultsDiv.hidden = true;
+  extractionPanel.hidden = true;
   errorDiv.hidden = false;
   errorText.textContent = message;
 }
@@ -731,8 +860,7 @@ function resetToUpload(): void {
   currentResult = null;
 
   statusDiv.hidden = true;
-  previewDiv.hidden = true;
-  resultsDiv.hidden = true;
+  extractionPanel.hidden = true;
   errorDiv.hidden = true;
   uploadZone.hidden = false;
 }
@@ -781,7 +909,7 @@ function handleFile(file: File): void {
       return;
     }
 
-    parseAndShowPreview(content);
+    parseAndShowExtractionPanel(content);
   };
 
   reader.onerror = () => {
@@ -793,8 +921,8 @@ function handleFile(file: File): void {
   reader.readAsText(file);
 }
 
-// Parse genome file and show preview (Step 1)
-function parseAndShowPreview(content: string): void {
+// Parse genome file and show extraction panel
+function parseAndShowExtractionPanel(content: string): void {
   if (!snpList) {
     showError('SNP list not loaded. Please refresh the page.');
     return;
@@ -804,8 +932,8 @@ function parseAndShowPreview(content: string): void {
     showStatus('Parsing genome file...');
     const parseResult = parseGenomeFile(content);
 
-    // Show preview instead of immediately extracting
-    showPreview(parseResult);
+    // Show extraction panel
+    showExtractionPanel(parseResult);
   } catch (err) {
     // Handle parse errors
     if (err instanceof ParseError) {
@@ -854,7 +982,7 @@ async function fetchPaidSnpList(): Promise<boolean> {
 
       // Decrypt and cache the SNP list
       paidSnpList = await decryptSnpList(data.encryptedSnpList, data.iv, storedToken);
-      updateTokenUI();
+      updateLicenseSectionUI();
       return true;
     } else {
       const errorMsg = data.error === 'exhausted'
@@ -870,15 +998,35 @@ async function fetchPaidSnpList(): Promise<boolean> {
   }
 }
 
-// Perform extraction with selected categories (Step 2)
-async function performExtraction(): Promise<void> {
+// Update download button state based on tier and license validity
+function updateDownloadButtonState(): void {
+  const requiresLicense = TIER_REQUIRES_LICENSE[selectedTier];
+  const canDownload = !requiresLicense || (storedToken && licenseValidated);
+
+  downloadBtn.disabled = !canDownload;
+
+  if (!canDownload) {
+    downloadBtn.classList.add('btn-disabled');
+    downloadBtn.title = 'Valid license key required for Full Report';
+    extractionHint.textContent = 'Purchase Full Access or enter a license key to save results.';
+    extractionHint.classList.add('extraction-hint-warning');
+  } else {
+    downloadBtn.classList.remove('btn-disabled');
+    downloadBtn.title = '';
+    extractionHint.textContent = 'Change any settings above and save again anytime.';
+    extractionHint.classList.remove('extraction-hint-warning');
+  }
+}
+
+// Perform extraction and download
+async function performExtractionAndDownload(): Promise<void> {
   if (!currentParseResult || !snpList) {
     showError('No file loaded. Please upload a genome file first.');
     return;
   }
 
   // Check if paid tier is selected
-  if (PRESET_REQUIRES_TOKEN[currentPreset]) {
+  if (TIER_REQUIRES_LICENSE[selectedTier]) {
     if (!storedToken || !licenseValidated) {
       showError('Please enter a valid license key for Full Access reports.');
       return;
@@ -890,21 +1038,30 @@ async function performExtraction(): Promise<void> {
       if (!success) {
         return;
       }
+      // Update the preview with the paid list now available
+      updateCategoryCounts();
+      updateExtractionPreview();
     }
   }
 
   try {
     showStatus('Extracting variants...');
 
-    // Use paid SNP list if available and paid tier selected, otherwise free list
-    const listToUse = PRESET_REQUIRES_TOKEN[currentPreset] && paidSnpList ? paidSnpList : snpList;
+    // Use paid SNP list if available and full tier selected, otherwise free list
+    const listToUse = TIER_REQUIRES_LICENSE[selectedTier] && paidSnpList ? paidSnpList : snpList;
+
+    // Get categories to use (all categories for free tier, selected for full)
+    const categoriesToUse = selectedTier === 'full' ? selectedCategories : ALL_CATEGORIES;
 
     // Extract matching variants with category filter
-    const extractionResult = extractVariants(currentParseResult, listToUse, selectedCategories);
+    currentResult = extractVariants(currentParseResult, listToUse, categoriesToUse);
 
-    // Show results
-    showStatus('Processing complete.');
-    showResults(extractionResult);
+    // Download immediately
+    downloadResults();
+
+    // Return to extraction panel
+    hideStatus();
+    extractionPanel.hidden = false;
   } catch (err) {
     if (err instanceof Error) {
       showError(err.message || 'Failed to extract variants.');
@@ -971,12 +1128,9 @@ uploadZone.addEventListener('drop', (e) => {
   }
 });
 
-// Preview action buttons
-backBtn.addEventListener('click', resetToUpload);
-extractBtn.addEventListener('click', performExtraction);
-
-// Download button
-downloadBtn.addEventListener('click', downloadResults);
+// Extraction panel action buttons
+changeFileBtn.addEventListener('click', resetToUpload);
+downloadBtn.addEventListener('click', performExtractionAndDownload);
 
 // Prevent default drag behavior on document
 document.addEventListener('dragover', (e) => e.preventDefault());

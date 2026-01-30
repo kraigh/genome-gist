@@ -198,12 +198,13 @@ function toMinimalCSV(result: ExtractionResult): string {
 
 /**
  * Generate filename for download
+ * Uses user-friendly naming: my-genome-snps-{date}.{ext}
  */
 export function generateFilename(format: OutputFormat = 'detailed'): string {
   const date = formatDateOnly(new Date().toISOString());
   const ext = format === 'minimal' ? 'csv' : 'yaml';
-  const suffix = format === 'detailed' ? '' : `-${format}`;
-  return `genomegist-results${suffix}-${date}.${ext}`;
+  const formatSuffix = format === 'detailed' ? '' : `-${format}`;
+  return `my-genome-snps${formatSuffix}-${date}.${ext}`;
 }
 
 /**

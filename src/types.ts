@@ -2,6 +2,22 @@
  * GenomeGist - Core Type Definitions
  */
 
+// Import category types from generated file (source of truth)
+// These are auto-generated from the SNP list by scripts/generate-categories.cjs
+import {
+  type SNPCategory as GeneratedSNPCategory,
+  ALL_CATEGORIES as GENERATED_ALL_CATEGORIES,
+  CATEGORY_LABELS as GENERATED_CATEGORY_LABELS,
+  ESTIMATED_CATEGORY_COUNTS,
+  ESTIMATED_TOTAL_COUNT,
+} from './generated/snp-categories';
+
+// Re-export for consumers
+export type SNPCategory = GeneratedSNPCategory;
+export const ALL_CATEGORIES = GENERATED_ALL_CATEGORIES;
+export const CATEGORY_LABELS = GENERATED_CATEGORY_LABELS;
+export { ESTIMATED_CATEGORY_COUNTS, ESTIMATED_TOTAL_COUNT };
+
 // =============================================================================
 // Genome File Types
 // =============================================================================
@@ -55,52 +71,43 @@ export class ParseError extends Error {
 // SNP List Types
 // =============================================================================
 
-/**
- * Category of SNP (for organization/filtering)
- */
-export type SNPCategory =
-  | 'methylation'
-  | 'detoxification'
-  | 'cardiovascular'
-  | 'pharmacogenomics'
-  | 'neurotransmitters'
-  | 'immune'
-  | 'nutrition'
-  | 'other';
+// Note: SNPCategory and ALL_CATEGORIES are imported from './generated/snp-categories'
+// which is auto-generated from the SNP list by scripts/generate-categories.cjs
 
 /**
- * All available categories as an array
+ * Tier selection options
+ * - free: Free tier with limited SNPs (~15, uses bundled SNP list)
+ * - full: Paid tier with all categories (1,000+ SNPs, requires license key)
  */
-export const ALL_CATEGORIES: SNPCategory[] = [
-  'methylation',
-  'detoxification',
-  'cardiovascular',
-  'pharmacogenomics',
-  'neurotransmitters',
-  'immune',
-  'nutrition',
-  'other',
-];
+export type Tier = 'free' | 'full';
 
 /**
- * Category preset options
- * - demo: Free tier with limited SNPs (uses all categories but limited by free SNP list)
- * - wellness: Paid tier focused on lifestyle optimization
- * - full: Paid tier with all categories including medical markers
+ * Whether a tier requires a paid license key
+ */
+export const TIER_REQUIRES_LICENSE: Record<Tier, boolean> = {
+  free: false,
+  full: true,
+};
+
+/**
+ * Legacy category presets (for CLI backward compatibility)
+ * @deprecated Use Tier type instead
  */
 export type CategoryPreset = 'demo' | 'wellness' | 'full';
 
 /**
- * Preset definitions mapping preset names to included categories
+ * Legacy category preset definitions (for CLI backward compatibility)
+ * @deprecated Use Tier type instead
  */
 export const CATEGORY_PRESETS: Record<CategoryPreset, SNPCategory[]> = {
-  demo: ALL_CATEGORIES, // Demo uses all categories but limited by free SNP list
-  wellness: ['methylation', 'nutrition', 'neurotransmitters', 'detoxification'],
+  demo: ALL_CATEGORIES, // Free tier - all categories but limited SNPs
+  wellness: ['methylation', 'vitamins_minerals', 'hormones_neurotransmitters', 'food_sensitivities'],
   full: ALL_CATEGORIES,
 };
 
 /**
- * Whether a preset requires a paid token
+ * Legacy preset token requirements (for CLI backward compatibility)
+ * @deprecated Use TIER_REQUIRES_LICENSE instead
  */
 export const PRESET_REQUIRES_TOKEN: Record<CategoryPreset, boolean> = {
   demo: false,
@@ -108,43 +115,7 @@ export const PRESET_REQUIRES_TOKEN: Record<CategoryPreset, boolean> = {
   full: true,
 };
 
-/**
- * Human-readable labels and descriptions for each category
- */
-export const CATEGORY_LABELS: Record<SNPCategory, { name: string; description: string }> = {
-  methylation: {
-    name: 'Methylation',
-    description: 'Folate metabolism, MTHFR variants',
-  },
-  nutrition: {
-    name: 'Nutrition',
-    description: 'Vitamin metabolism, lactose tolerance, obesity risk',
-  },
-  neurotransmitters: {
-    name: 'Neurotransmitters',
-    description: 'Dopamine, serotonin, and mood-related variants',
-  },
-  detoxification: {
-    name: 'Detoxification',
-    description: 'Liver enzyme and toxin clearance',
-  },
-  pharmacogenomics: {
-    name: 'Drug Response',
-    description: 'How you metabolize medications (CYP enzymes)',
-  },
-  cardiovascular: {
-    name: 'Cardiovascular',
-    description: 'Heart health markers including APOE',
-  },
-  immune: {
-    name: 'Immune',
-    description: 'Immune system and inflammation markers',
-  },
-  other: {
-    name: 'Other',
-    description: 'Additional wellness-relevant variants',
-  },
-};
+// Note: CATEGORY_LABELS is imported from './generated/snp-categories'
 
 /**
  * Estimate of matches by category (for preview)

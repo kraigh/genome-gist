@@ -26,7 +26,7 @@
     {
       "rsid": "rs429358",
       "gene": "APOE",
-      "category": "cardiovascular",
+      "category": "lipids",
       "annotation": "APOE e4 determinant (along with rs7412). The C allele contributes to the e4 haplotype.",
       "sources": ["ClinVar", "SNPedia", "GWAS Catalog"],
       "riskAllele": "C",
@@ -36,7 +36,7 @@
     {
       "rsid": "rs7412",
       "gene": "APOE",
-      "category": "cardiovascular",
+      "category": "lipids",
       "annotation": "APOE e2 determinant (along with rs429358). The T allele contributes to the e2 haplotype.",
       "sources": ["ClinVar", "SNPedia", "GWAS Catalog"],
       "riskAllele": "T",
@@ -46,7 +46,7 @@
     {
       "rsid": "rs4680",
       "gene": "COMT",
-      "category": "neurotransmitters",
+      "category": "hormones_neurotransmitters",
       "annotation": "Val158Met variant. The A allele (Met) is associated with slower dopamine clearance.",
       "sources": ["ClinVar", "PharmGKB", "SNPedia"],
       "riskAllele": "A",
@@ -56,7 +56,7 @@
     {
       "rsid": "rs1800497",
       "gene": "ANKK1/DRD2",
-      "category": "neurotransmitters",
+      "category": "hormones_neurotransmitters",
       "annotation": "Taq1A variant near DRD2. The A1 allele (T) is associated with reduced D2 receptor density.",
       "sources": ["SNPedia", "GWAS Catalog"],
       "riskAllele": "T",
@@ -66,7 +66,7 @@
     {
       "rsid": "rs6265",
       "gene": "BDNF",
-      "category": "neurotransmitters",
+      "category": "hormones_neurotransmitters",
       "annotation": "Val66Met variant. The T allele (Met) may affect neuroplasticity and memory.",
       "sources": ["ClinVar", "SNPedia", "GWAS Catalog"],
       "riskAllele": "T",
@@ -76,7 +76,7 @@
     {
       "rsid": "rs1799971",
       "gene": "OPRM1",
-      "category": "pharmacogenomics",
+      "category": "drug_metabolism",
       "annotation": "A118G variant in opioid receptor. The G allele may affect pain perception and opioid response.",
       "sources": ["PharmGKB", "ClinVar", "SNPedia"],
       "riskAllele": "G",
@@ -86,7 +86,7 @@
     {
       "rsid": "rs12248560",
       "gene": "CYP2C19",
-      "category": "pharmacogenomics",
+      "category": "drug_metabolism",
       "annotation": "CYP2C19*17 ultrarapid metabolizer allele. The T allele increases enzyme activity.",
       "sources": ["PharmGKB", "ClinVar"],
       "riskAllele": "T",
@@ -96,7 +96,7 @@
     {
       "rsid": "rs4244285",
       "gene": "CYP2C19",
-      "category": "pharmacogenomics",
+      "category": "drug_metabolism",
       "annotation": "CYP2C19*2 loss-of-function allele. The A allele reduces metabolism of clopidogrel and other drugs.",
       "sources": ["PharmGKB", "ClinVar", "CPIC"],
       "riskAllele": "A",
@@ -106,7 +106,7 @@
     {
       "rsid": "rs1045642",
       "gene": "ABCB1",
-      "category": "pharmacogenomics",
+      "category": "drug_metabolism",
       "annotation": "C3435T variant in P-glycoprotein. May affect drug transport and bioavailability.",
       "sources": ["PharmGKB", "SNPedia"],
       "riskAllele": "T",
@@ -116,7 +116,7 @@
     {
       "rsid": "rs53576",
       "gene": "OXTR",
-      "category": "neurotransmitters",
+      "category": "hormones_neurotransmitters",
       "annotation": "Oxytocin receptor variant. The G allele is associated with social behavior traits.",
       "sources": ["SNPedia", "GWAS Catalog"],
       "riskAllele": "A",
@@ -126,7 +126,7 @@
     {
       "rsid": "rs7799039",
       "gene": "LEP",
-      "category": "nutrition",
+      "category": "lipids",
       "annotation": "Leptin gene variant. The A allele may be associated with obesity risk.",
       "sources": ["SNPedia", "GWAS Catalog"],
       "riskAllele": "A",
@@ -136,7 +136,7 @@
     {
       "rsid": "rs9939609",
       "gene": "FTO",
-      "category": "nutrition",
+      "category": "lipids",
       "annotation": "FTO obesity-associated variant. The A allele is associated with increased BMI.",
       "sources": ["GWAS Catalog", "SNPedia", "ClinVar"],
       "riskAllele": "A",
@@ -146,7 +146,7 @@
     {
       "rsid": "rs1544410",
       "gene": "VDR",
-      "category": "nutrition",
+      "category": "vitamins_minerals",
       "annotation": "BsmI variant in vitamin D receptor. May affect vitamin D metabolism and bone health.",
       "sources": ["SNPedia", "GWAS Catalog"],
       "riskAllele": "A",
@@ -156,7 +156,7 @@
     {
       "rsid": "rs2282679",
       "gene": "GC",
-      "category": "nutrition",
+      "category": "vitamins_minerals",
       "annotation": "Vitamin D binding protein variant. The C allele is associated with lower vitamin D levels.",
       "sources": ["GWAS Catalog", "SNPedia"],
       "riskAllele": "C",
@@ -166,7 +166,7 @@
     {
       "rsid": "rs762551",
       "gene": "CYP1A2",
-      "category": "pharmacogenomics",
+      "category": "detoxification",
       "annotation": "Caffeine metabolism variant. The C allele is associated with slower caffeine clearance.",
       "sources": ["PharmGKB", "SNPedia"],
       "riskAllele": "C",
@@ -176,7 +176,7 @@
     {
       "rsid": "rs4988235",
       "gene": "MCM6/LCT",
-      "category": "nutrition",
+      "category": "food_sensitivities",
       "annotation": "Lactase persistence variant. The T allele allows continued lactose digestion in adulthood.",
       "sources": ["SNPedia", "GWAS Catalog"],
       "riskAllele": "C",

@@ -178,19 +178,19 @@ describe('generateFilename', () => {
   it('generates filename with current date for detailed', () => {
     const filename = generateFilename('detailed');
     const today = new Date().toISOString().slice(0, 10);
-    expect(filename).toBe(`genomegist-results-${today}.yaml`);
+    expect(filename).toBe(`my-genome-snps-${today}.yaml`);
   });
 
   it('generates filename with suffix for compact', () => {
     const filename = generateFilename('compact');
     const today = new Date().toISOString().slice(0, 10);
-    expect(filename).toBe(`genomegist-results-compact-${today}.yaml`);
+    expect(filename).toBe(`my-genome-snps-compact-${today}.yaml`);
   });
 
   it('generates .csv extension for minimal', () => {
     const filename = generateFilename('minimal');
     const today = new Date().toISOString().slice(0, 10);
-    expect(filename).toBe(`genomegist-results-minimal-${today}.csv`);
+    expect(filename).toBe(`my-genome-snps-minimal-${today}.csv`);
   });
 
   it('has .yaml extension for detailed', () => {
