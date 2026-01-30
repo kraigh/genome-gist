@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Extract clinically relevant SNPs from your genome file. Privacy-first: your data never leaves your browser." />
+    <meta name="description" content="Extract clinically relevant SNPs from your genome file for AI analysis. Get personalized genetic insights while keeping your data private — all processing happens in your browser." />
     <title>GenomeGist - Extract the gist of your genome</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@
             </div>
             <p class="upload-text">Drag and drop your genome file here</p>
             <p class="upload-subtext">or click to browse</p>
-            <p class="upload-formats">Supports: 23andMe (.txt)</p>
+            <p class="upload-formats">Supports: 23andMe, AncestryDNA (.txt)</p>
             <p class="upload-privacy">Your file stays on your device — never uploaded or shared</p>
             <input type="file" id="file-input" accept=".txt,.csv" hidden />
           </div>
@@ -100,7 +100,7 @@
                       <span class="tier-radio"></span>
                       <span class="tier-content">
                         <span class="tier-name">Full Report</span>
-                        <span class="tier-desc">1,000+ SNPs</span>
+                        <span class="tier-desc">600+ curated SNPs</span>
                       </span>
                     </label>
                   </div>
@@ -231,44 +231,70 @@
         </section>
 
         <section class="info-section card">
-          <h2>What is this?</h2>
+          <h2>The Problem</h2>
           <p>
-            GenomeGist extracts clinically and wellness-relevant genetic variants (SNPs) from raw
-            genome files exported from services like 23andMe. The output is a compact file
-            ready for analysis with AI tools like ChatGPT or Claude.
+            Your 23andMe raw data file contains over 600,000 genetic variants. That's too much
+            for any AI to process meaningfully, and most of it is genetic noise — variants with
+            no known significance.
+          </p>
+          <p>
+            Meanwhile, the variants that <em>do</em> matter — the ones linked to how you metabolize
+            drugs, absorb nutrients, or respond to certain foods — are buried in that massive file
+            with no way to find them.
+          </p>
+
+          <h2>The Solution</h2>
+          <p>
+            GenomeGist extracts just the clinically and wellness-relevant variants from your genome
+            file. Instead of 600,000+ rows of data, you get a focused file with the variants that
+            researchers have actually studied and linked to meaningful traits.
+          </p>
+          <p>
+            The output is compact enough to upload to AI assistants like ChatGPT or Claude, where
+            you can ask questions about your specific genetic makeup and get personalized insights.
           </p>
 
           <h3>What are SNPs?</h3>
           <p>
             SNPs (single nucleotide polymorphisms, pronounced "snips") are small genetic variations
-            that make you unique. Your genome file from 23andMe contains data on hundreds of thousands
-            of these variants. Most are unremarkable, but some are associated with health traits,
-            drug metabolism, or nutritional needs.
-          </p>
-          <p>
-            GenomeGist extracts just the variants that researchers have linked to meaningful traits,
-            filtering out the noise so you can focus on what matters.
+            that make you unique. Some SNPs affect how you process nutrients, respond to medications,
+            or predispose you to certain health conditions. Most have no known effect.
           </p>
 
-          <h3>How to use the output</h3>
+          <h3>How are relevant SNPs identified?</h3>
           <p>
-            The extracted file is designed to be uploaded to AI assistants for personalized analysis.
-            You can:
+            The SNP list used by GenomeGist is compiled from authoritative public databases:
           </p>
           <ul>
-            <li>Ask about specific variants and what they mean</li>
-            <li>Get personalized supplement or nutrition suggestions based on your genetics</li>
-            <li>Understand how you might respond to certain medications</li>
-            <li>Learn about your genetic predispositions for various health traits</li>
+            <li><strong>ClinVar</strong> — NCBI's database of clinically significant variants, filtered to only include variants reviewed by expert panels</li>
+            <li><strong>PharmGKB</strong> — Pharmacogenomics variants with high-evidence drug-gene interactions</li>
+            <li><strong>GWAS Catalog</strong> — Genome-wide association study results, filtered to only the most statistically significant findings from large studies</li>
           </ul>
           <p>
-            The compact output format keeps the file small enough to upload without hitting
-            context limits, while including enough information for meaningful analysis.
+            These are supplemented with a curated set of well-studied nutrigenomics and wellness
+            variants — things like MTHFR methylation variants, vitamin metabolism genes, and
+            food sensitivity markers that are commonly discussed in functional medicine.
+          </p>
+
+          <h3>What can you do with the output?</h3>
+          <p>
+            Upload the extracted file to an AI assistant and ask questions like:
+          </p>
+          <ul>
+            <li>"What do my MTHFR variants mean for folate supplementation?"</li>
+            <li>"Based on my CYP2D6 status, how might I metabolize common medications?"</li>
+            <li>"What does my APOE genotype suggest about cardiovascular health?"</li>
+            <li>"Are there any supplements that might be particularly relevant for my genetics?"</li>
+          </ul>
+          <p>
+            The AI can cross-reference your specific genotypes with research literature to provide
+            personalized context — something that wasn't possible before without expensive
+            professional consultations.
           </p>
         </section>
 
         <section class="categories-section card">
-          <h2>What's Included</h2>
+          <h2>Free Demo vs. Full Report</h2>
 
           <div class="tier-comparison">
             <div class="tier-card tier-free">
@@ -277,26 +303,28 @@
               <p class="tier-count">~15 variants</p>
               <p class="tier-desc">
                 A sample of well-known SNPs including MTHFR, APOE, COMT, and a few others.
-                Great for trying out the tool.
+                Enough to verify the tool works with your file and see the output format.
               </p>
             </div>
             <div class="tier-card tier-paid">
               <div class="tier-badge">Full Access</div>
               <h3>Complete Report</h3>
-              <p class="tier-count">1,000+ variants</p>
+              <p class="tier-count">600+ curated variants</p>
               <p class="tier-desc">
-                Comprehensive coverage across all categories. Process as many files
-                as you like with unlimited exports for 24 hours.
+                Comprehensive coverage of clinically significant and wellness-relevant variants
+                across all categories. Includes pharmacogenomics, nutrigenomics, and disease
+                risk markers with strong research evidence.
               </p>
               <p class="tier-price">$29</p>
               <button class="btn btn-primary btn-buy-now" data-action="buy">Buy Now</button>
             </div>
           </div>
 
-          <h3 class="categories-heading">Categories in Full Report</h3>
+          <h3 class="categories-heading">What's in the Full Report</h3>
           <p class="categories-intro">
-            The Full Report covers all categories below. You can customize which
-            categories to include when downloading your results.
+            The Full Report includes variants organized into the categories below. Each category
+            contains SNPs with established research linking them to relevant health or wellness traits.
+            You can select which categories to include when downloading.
           </p>
 
           <div class="category-grid">
@@ -383,10 +411,32 @@
           <details class="faq-item">
             <summary>What's included in the Full Report vs. Free Demo?</summary>
             <p>
-              The Free Demo includes ~15 well-known SNPs like MTHFR, APOE, and COMT — great for
-              trying the tool. The Full Report includes 600+ curated variants across 8 categories:
-              lipids, detoxification, vitamins &amp; minerals, hormones &amp; mood, cardiovascular,
-              drug response, food sensitivities, and methylation.
+              The Free Demo includes ~15 well-known SNPs like MTHFR, APOE, and COMT — enough to
+              verify the tool works with your file and see what the output looks like.
+            </p>
+            <p>
+              The Full Report includes 600+ variants drawn from ClinVar (clinical significance),
+              PharmGKB (drug interactions), GWAS Catalog (trait associations), and a curated
+              wellness supplement. These are organized into 8 categories: lipids, detoxification,
+              vitamins &amp; minerals, hormones &amp; mood, cardiovascular, drug response,
+              food sensitivities, and methylation.
+            </p>
+          </details>
+
+          <details class="faq-item">
+            <summary>How do you decide which SNPs to include?</summary>
+            <p>
+              The SNP list is compiled from established public databases with strict filtering:
+            </p>
+            <ul>
+              <li>ClinVar variants must be reviewed by expert panels</li>
+              <li>PharmGKB entries must have high-evidence clinical annotations</li>
+              <li>GWAS results must have extremely strong statistical significance (p &lt; 10<sup>-100</sup>) from large studies (50,000+ participants)</li>
+            </ul>
+            <p>
+              This is supplemented with curated nutrigenomics and wellness variants that have
+              substantial research literature but may not appear in clinical databases — things
+              like vitamin metabolism genes, detoxification enzymes, and food sensitivity markers.
             </p>
           </details>
 
@@ -430,14 +480,15 @@
             </div>
             <div class="pricing-tier pricing-tier-highlight">
               <h3>Full Access</h3>
-              <p class="tier-desc">1,000+ variants across all categories</p>
+              <p class="tier-desc">600+ curated variants across all categories</p>
               <p class="price">$29</p>
               <button class="btn btn-primary btn-buy-now" data-action="buy">Buy Now</button>
             </div>
           </div>
           <p class="pricing-note">
             Full Access includes 3 sessions. Each session gives you 24 hours of unlimited
-            access — process multiple files, export with any settings, as many times as you need.
+            access — process multiple files (yours, family members), export with any settings,
+            as many times as you need. Come back months later to re-analyze with new questions.
           </p>
         </section>
 

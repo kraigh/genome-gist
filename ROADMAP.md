@@ -224,7 +224,7 @@
 ## Phase 3: Polish & Additional Formats
 
 ### 3.1 Additional Parsers
-- [ ] AncestryDNA parser
+- [x] AncestryDNA parser
 - [ ] Legacy 23andMe formats (v3, v4)
 - [ ] Identify additional formats from popular consumer genome sequencers
 - [ ] Improve format auto-detection

@@ -4,11 +4,13 @@
 
 export { detectFormat, formatDisplayName } from './detector';
 export { parse23andMe } from './23andme';
+export { parseAncestry } from './ancestry';
 
 import type { ParseResult } from '../types';
 import { ParseError } from '../types';
 import { detectFormat } from './detector';
 import { parse23andMe } from './23andme';
+import { parseAncestry } from './ancestry';
 
 /**
  * Parse a genome file, auto-detecting format
@@ -30,7 +32,7 @@ export function parseGenomeFile(content: string): ParseResult {
     }
 
     case 'ancestry':
-      throw createUnsupportedFormatError('AncestryDNA support coming soon.');
+      return parseAncestry(content);
 
     case 'unknown':
       throw createUnsupportedFormatError(
@@ -40,5 +42,5 @@ export function parseGenomeFile(content: string): ParseResult {
 }
 
 function createUnsupportedFormatError(message: string): ParseError {
-  return new ParseError(message, undefined, 'Supported formats: 23andMe (.txt)');
+  return new ParseError(message, undefined, 'Supported formats: 23andMe (.txt), AncestryDNA (.txt)');
 }
