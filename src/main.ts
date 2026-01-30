@@ -1013,8 +1013,28 @@ function updateDownloadButtonState(): void {
   } else {
     downloadBtn.classList.remove('btn-disabled');
     downloadBtn.title = '';
-    extractionHint.textContent = 'Change any settings above and save again anytime.';
     extractionHint.classList.remove('extraction-hint-warning');
+
+    // Show subtle upgrade message for free tier users
+    if (selectedTier === 'free') {
+      extractionHint.innerHTML =
+        'This demo includes ~15 SNPs. <a href="#" class="upgrade-link">Get Full Report</a> for 1,000+ variants.';
+      // Add click handler for the upgrade link
+      const upgradeLink = extractionHint.querySelector('.upgrade-link');
+      if (upgradeLink) {
+        upgradeLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          // Select the full tier radio button
+          const fullTierRadio = document.querySelector<HTMLInputElement>('input[name="tier"][value="full"]');
+          if (fullTierRadio) {
+            fullTierRadio.checked = true;
+            fullTierRadio.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+      }
+    } else {
+      extractionHint.textContent = 'Change any settings above and save again anytime.';
+    }
   }
 }
 

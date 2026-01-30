@@ -135,7 +135,7 @@
 - [x] Update preview step to show tier options (Demo, Wellness, Full Report)
 - [x] Make it clear which presets require a token
 - [x] Show estimated variant counts per tier in preview
-- [ ] Add subtle "upgrade" messaging for free tier users
+- [x] Add subtle "upgrade" messaging for free tier users
 
 ### 2.0.1 Unified Extraction Panel UX Redesign
 - [x] Replace multi-step flow (Preview → Results) with single unified panel
