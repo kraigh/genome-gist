@@ -413,7 +413,7 @@ function updateLicenseSectionUI(): void {
       } else {
         // Session expired, but license still valid
         licenseStatusText.textContent = 'Full Access Unlocked';
-        sessionInfo.textContent = sessionsRemaining !== null ? `${sessionsRemaining} sessions available` : '';
+        sessionInfo.textContent = sessionsRemaining !== null ? `${sessionsRemaining} session${sessionsRemaining === 1 ? '' : 's'} · each = 24h unlimited` : '';
       }
     } else if (paidSnpList) {
       // Have SNP list cached (session started during this page load)
@@ -428,7 +428,7 @@ function updateLicenseSectionUI(): void {
     } else {
       // License validated but no active session yet
       licenseStatusText.textContent = 'Full Access Unlocked';
-      sessionInfo.textContent = sessionsRemaining !== null ? `${sessionsRemaining} sessions available` : '';
+      sessionInfo.textContent = sessionsRemaining !== null ? `${sessionsRemaining} session${sessionsRemaining === 1 ? '' : 's'} · each = 24h unlimited` : '';
     }
   } else if (storedToken) {
     // Token stored but not yet validated - show as pending in active section

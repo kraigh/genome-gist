@@ -158,7 +158,7 @@
 - [x] Rename "Upload different file" → "Process different file"
 - [x] "Process different file" returns to upload (session continues, can process more files)
 - [x] Update copy throughout: "3 sessions" not "3 uses"
-- [ ] Explain session model: "Each session = 24 hours of unlimited access"
+- [x] Explain session model: "Each session = 24 hours of unlimited access"
 
 ### 2.1 Token Input UI
 - [x] Add inline token input in preview step (appears when paid tier selected)
@@ -166,7 +166,7 @@
 - [x] Show validation result (success with uses remaining, or error)
 - [x] Store validated token in localStorage
 - [x] Show "Token active" badge when token is stored
-- [ ] Add "Have a token?" link for users who already purchased
+- [x] Add "Have a token?" link for users who already purchased (as "Already have a license key?")
 - [x] Clear token / sign out option
 
 ### 2.2 API Integration
@@ -186,7 +186,7 @@
 - [x] Update copy: "sessions remaining" terminology throughout
 - [x] Allow processing multiple files within a session without consuming additional sessions
 - [x] If session expired, show message and re-fetch SNP list (starts new session)
-- [ ] Clear messaging: "You have 24 hours of unlimited access"
+- [x] Clear messaging: "You have 24 hours of unlimited access"
 
 **Backend changes (genome-gist-infra repo):**
 - [x] Add `lastSessionStartedAt` timestamp to token record in KV
